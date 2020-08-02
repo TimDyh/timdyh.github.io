@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="万维网客户程序与万维网服务器程序之间的交互遵守严格的协议，这就是超文本传输协议 HTTP（HyperText Transfer Protocol）。HTTP 是一个应用层协议，它使用 TCP 连接进行可靠的传送。 安全套接字层 SSL（Secure Socket Layer） 和运输层安全 TLS（Transport Layer Security）是现在广泛使用的两个安全协议，作用在端系统应用层的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HTTP 与 HTTPS 协议分析">
+<meta property="og:url" content="http://yoursite.com/2020/07/15/HTTP-%E4%B8%8E-HTTPS-%E5%8D%8F%E8%AE%AE%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="TimDyh">
+<meta property="og:description" content="万维网客户程序与万维网服务器程序之间的交互遵守严格的协议，这就是超文本传输协议 HTTP（HyperText Transfer Protocol）。HTTP 是一个应用层协议，它使用 TCP 连接进行可靠的传送。 安全套接字层 SSL（Secure Socket Layer） 和运输层安全 TLS（Transport Layer Security）是现在广泛使用的两个安全协议，作用在端系统应用层的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145144.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145145.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145146.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145147.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145148.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145149.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145150.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145151.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145152.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145153.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145154.jpg">
+<meta property="article:published_time" content="2020-07-15T15:12:32.000Z">
+<meta property="article:modified_time" content="2020-08-02T13:46:01.134Z">
+<meta property="article:author" content="禹衡">
+<meta property="article:tag" content="计算机网络">
+<meta property="article:tag" content="网络安全">
+<meta property="article:tag" content="网络协议">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145144.jpg">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/15/HTTP-%E4%B8%8E-HTTPS-%E5%8D%8F%E8%AE%AE%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>HTTP 与 HTTPS 协议分析 | TimDyh</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5a3f05cca5b5d8d38abfd03700d999f3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">TimDyh</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/15/HTTP-%E4%B8%8E-HTTPS-%E5%8D%8F%E8%AE%AE%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="禹衡">
+      <meta itemprop="description" content="此生将无法被定义">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TimDyh">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HTTP 与 HTTPS 协议分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-15 23:12:32" itemprop="dateCreated datePublished" datetime="2020-07-15T23:12:32+08:00">2020-07-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>万维网客户程序与万维网服务器程序之间的交互遵守严格的协议，这就是超文本传输协议 HTTP（HyperText Transfer Protocol）。HTTP 是一个应用层协议，它使用 TCP 连接进行可靠的传送。</p>
+<p>安全套接字层 SSL（Secure Socket Layer） 和运输层安全 TLS（Transport Layer Security）是现在广泛使用的两个安全协议，作用在端系统应用层的 HTTP 和运输层之间，在 TCP 之上建立起一个安全通道，为通过 TCP 传输的应用层数据提供安全保障。</p>
+<p>超文本传输安全协议 HTTPS（Hyper Text Transfer Protocol over Secure Socket Layer）在 HTTP 的基础上加入 SSL 层，通过传输加密和身份认证保证了传输过程的安全性。</p>
+<p>本次实验使用 Wireshark 报文分析软件，分别通过分析 HTTP 和 HTTPS 协议的交互过程和报文内容，研究二者的工作原理及异同之处。</p>
+<a id="more"></a>
+
+
+
+<h3 id="HTTP-协议分析"><a href="#HTTP-协议分析" class="headerlink" title="HTTP 协议分析"></a>HTTP 协议分析</h3><p>HTTP 协议使用了面向连接的 TCP 协议作为运输层协议，保证了数据的可靠传输。具体来说，HTTP 协议首先要和服务器建立 TCP 连接，这需要使用三报文握手。当建立 TCP 连接的三报文握手的前两部分完成后，万维网客户就把 HTTP 请求报文，作为建立 TCP 连接的三报文握手中的第三个报文的数据，发送给万维网服务器。服务器收到 HTTP 请求报文后，就把所请求的文档作为响应报文返回给客户。</p>
+<h4 id="建立-TCP-连接"><a href="#建立-TCP-连接" class="headerlink" title="建立 TCP 连接"></a>建立 TCP 连接</h4><p>我们首先通过实验验证建立连接的过程。这里我们选择一个使用 HTTP 协议的网站“C语言中文网”（ <a href="http://c.biancheng.net/" target="_blank" rel="noopener">http://c.biancheng.net/</a> ）进行访问，然后在 Wireshark 软件中过滤出涉及该网站 IP 地址的报文。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145144.jpg" alt=""></p>
+<p>从图中可以清楚地看到建立 TCP 连接的三个报文：客户端发出的连接请求报文中 SYN=1，服务器发出的确认报文中 SYN=1 且 ACK=1，最后客户端发出的确认报文中 ACK=1。</p>
+<h4 id="分析-HTTP-报文"><a href="#分析-HTTP-报文" class="headerlink" title="分析 HTTP 报文"></a>分析 HTTP 报文</h4><p>TCP 连接建立成功后，客户端就会发送 HTTP 请求报文，服务器收到后也发回了响应报文，如下图所示。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145145.jpg" alt=""></p>
+<p>可以看到，请求报文中包含方法、URL、版本等字段，而响应报文中包含状态码、实体主体等字段。</p>
+<p>值得注意的是，报文中传输的数据都是以明文显示的。为了更加清楚地说明这一点，我们可以在该网站上注册一个账号并登录，然后分析与登录操作相关的报文。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145146.jpg" alt=""></p>
+<p>我们找到提交登录表单的报文，这条报文使用了 POST 方法，将用户登录所需的认证信息发送给服务器。可以清楚地看到，报文中包含明文的 username 和 password 字段，显然这是不安全的。</p>
+<h3 id="HTTPS-协议分析"><a href="#HTTPS-协议分析" class="headerlink" title="HTTPS 协议分析"></a>HTTPS 协议分析</h3><p>为了解决上述问题，使传输的过程更加安全，HTTPS 利用 SSL 层对会话进行加密，并提供身份认证和消息认证等安全服务。具体来说，在建立 TCP 连接之后，客户端与服务器先进行握手协议，完成加密算法的协商和会话密钥的传递，然后进行安全数据传输。</p>
+<p>下面通过分析访问 HTTPS 网站时的报文截获情况，重点研究握手的过程。这里以百度（ <a href="https://www.baidu.com/" target="_blank" rel="noopener">https://www.baidu.com/</a> ）为例。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145147.jpg" alt=""></p>
+<p>从图中可以大致总结出握手的基本流程：</p>
+<ol>
+<li>客户端 -&gt; 服务器：Client Hello</li>
+<li>客户端 &lt;- 服务器：Server Hello</li>
+<li>客户端 &lt;- 服务器：Certificate</li>
+<li>客户端 &lt;- 服务器：Server Key Exchange, Server Hello Done</li>
+<li>客户端 -&gt; 服务器：Client Key Exchange, Change Cipher Spec, Encrypted Handshake Message</li>
+<li>客户端 &lt;- 服务器：Change Cipher Spec, Encrypted Handshake Message</li>
+</ol>
+<p>下面我们详细分析每一步中报文的具体内容。</p>
+<h4 id="1-Client-Hello"><a href="#1-Client-Hello" class="headerlink" title="1. Client Hello"></a>1. Client Hello</h4><p>Client Hello 用于首次连接服务器时，或响应服务器发送的 Hello Request，或主动发送，以便重新协商连接中的安全参数。报文中携带了 TLS 协议版本号（Version）、一个随机数（Random）、客户端支持的加密套件（Cipher Suites）、压缩算法（Compression Methods）等。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145148.jpg" alt=""></p>
+<h4 id="2-Server-Hello"><a href="#2-Server-Hello" class="headerlink" title="2. Server Hello"></a>2. Server Hello</h4><p>该类型的消息用于响应 Client Hello 消息。如果服务器找到一组可以接受的算法套件时，则回复此消息，否则响应握手失败的警报。这里服务器返回协商的信息，确定了使用哪种加密套件和压缩方法等。此外，服务器也生成了一个随机数。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145149.jpg" alt=""></p>
+<h4 id="3-Certificate"><a href="#3-Certificate" class="headerlink" title="3. Certificate"></a>3. Certificate</h4><p>该消息紧跟在 Server Hello 消息后，用于向客户端下发证书。可以看到证书的类型是 X.509v3。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145150.jpg" alt=""></p>
+<h4 id="4-Server-Key-Exchange-Server-Hello-Done"><a href="#4-Server-Key-Exchange-Server-Hello-Done" class="headerlink" title="4. Server Key Exchange, Server Hello Done"></a>4. Server Key Exchange, Server Hello Done</h4><p>此消息在 Certificate 消息后立即发送，包含 Diffie-Hellman 算法的相关参数，以及服务器使用该秘钥交换算法所计算出来的公钥。此外，服务器为了证明此消息是真实可靠的，需要使用自己证书的私钥，并从 Client Hello 中提供的扩展 signature_algorithms 里选择合适的摘要和签名算法，对参数进行签名。</p>
+<p>传递完这些参数之后，服务器发送 Server Hello Done，表示已经把支持秘钥交换的消息发送完成，然后等待客户端响应。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145151.jpg" alt=""></p>
+<h4 id="5-Client-Key-Exchange-Change-Cipher-Spec-Encrypted-Handshake-Message"><a href="#5-Client-Key-Exchange-Change-Cipher-Spec-Encrypted-Handshake-Message" class="headerlink" title="5. Client Key Exchange, Change Cipher Spec, Encrypted Handshake Message"></a>5. Client Key Exchange, Change Cipher Spec, Encrypted Handshake Message</h4><p>客户端根据上一步服务器传来的公钥，生成预主密钥（pre-master key），然后通过 Client Key Exchange 将其传给服务器。服务器用自己的私钥解出这个预主密钥的信息，得到第三个随机数。到目前为止，客户端和服务器都拥有了三个随机数。于是两边根据这三个随机数以及 D-H 算法的相关参数生成一个会话密钥（session key），后续就使用这个密钥进行通信。</p>
+<p>Change Cipher Spec 用于通知服务器后续的通讯数据将在新协商的秘钥规范保护下交换。</p>
+<p>Encrypted Handshake Message 是客户端将前面的握手消息生成摘要再用协商好的秘钥加密得到的，这是客户端发出的第一条加密消息。服务端接收后会用秘钥解密，能解出来说明前面协商出来的秘钥是一致的。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145152.jpg" alt=""></p>
+<h4 id="6-Change-Cipher-Spec-Encrypted-Handshake-Message"><a href="#6-Change-Cipher-Spec-Encrypted-Handshake-Message" class="headerlink" title="6. Change Cipher Spec, Encrypted Handshake Message"></a>6. Change Cipher Spec, Encrypted Handshake Message</h4><p>同上，如果服务器通过 D-H 算法能够解密摘要，那么应该告知客户端协商的会话密钥是一致的。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145153.jpg" alt=""></p>
+<p>至此，握手的过程就算结束了，这以后的数据都会通过建立好的加密信道进行传输。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-07-18-145154.jpg" alt=""></p>
+<p>可以看到，Application Data 报文中的数据都是经过加密的，在一定程度上保证了通信的安全。</p>
+<h3 id="HTTP-与-HTTPS-的区别"><a href="#HTTP-与-HTTPS-的区别" class="headerlink" title="HTTP 与 HTTPS 的区别"></a>HTTP 与 HTTPS 的区别</h3><ul>
+<li>HTTP 以明文传输，安全性较差；HTTPS 的传输过程是加密的，安全性较好。</li>
+<li>HTTP 使用 80 端口；HTTPS 使用 443 端口。</li>
+<li>HTTP 使用 TCP 三次握手建立连接，客户端和服务器需要交换 3 个包；HTTPS 除了 TCP 的 3 个包，还要加上 SSL 握手需要的 9 个包，所以一共是 12 个包。正因为此，HTTPS 比 HTTP 需要更大的开销，页面响应速度也相对慢一些。</li>
+<li>使用 HTTPS 协议需要向数字证书认证机构 CA（Certificate Authority）申请证书。一般免费证书较少，因而需要一定费用。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag"># 计算机网络</a>
+              <a href="/tags/%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8/" rel="tag"># 网络安全</a>
+              <a href="/tags/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE/" rel="tag"># 网络协议</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/15/Sequential-Minimal-Optimization-A-Fast-Algorithm-for-Training-Support-Vector-Machines-%E8%AE%BA%E6%96%87%E7%A0%94%E8%AF%BB/" rel="prev" title="Sequential Minimal Optimization: A Fast Algorithm for Training Support Vector Machines 论文研读">
+      <i class="fa fa-chevron-left"></i> Sequential Minimal Optimization: A Fast Algorithm for Training Support Vector Machines 论文研读
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/19/%E5%9B%BE%E5%83%8F%E7%81%B0%E5%BA%A6%E7%9B%B4%E6%96%B9%E5%9B%BE%E5%9D%87%E8%A1%A1%E5%92%8C%E7%BA%BF%E6%80%A7%E5%8F%98%E6%8D%A2/" rel="next" title="图像灰度直方图均衡和线性变换">
+      图像灰度直方图均衡和线性变换 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-协议分析"><span class="nav-number">1.</span> <span class="nav-text">HTTP 协议分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#建立-TCP-连接"><span class="nav-number">1.1.</span> <span class="nav-text">建立 TCP 连接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分析-HTTP-报文"><span class="nav-number">1.2.</span> <span class="nav-text">分析 HTTP 报文</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTPS-协议分析"><span class="nav-number">2.</span> <span class="nav-text">HTTPS 协议分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Client-Hello"><span class="nav-number">2.1.</span> <span class="nav-text">1. Client Hello</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Server-Hello"><span class="nav-number">2.2.</span> <span class="nav-text">2. Server Hello</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-Certificate"><span class="nav-number">2.3.</span> <span class="nav-text">3. Certificate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-Server-Key-Exchange-Server-Hello-Done"><span class="nav-number">2.4.</span> <span class="nav-text">4. Server Key Exchange, Server Hello Done</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-Client-Key-Exchange-Change-Cipher-Spec-Encrypted-Handshake-Message"><span class="nav-number">2.5.</span> <span class="nav-text">5. Client Key Exchange, Change Cipher Spec, Encrypted Handshake Message</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-Change-Cipher-Spec-Encrypted-Handshake-Message"><span class="nav-number">2.6.</span> <span class="nav-text">6. Change Cipher Spec, Encrypted Handshake Message</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP-与-HTTPS-的区别"><span class="nav-number">3.</span> <span class="nav-text">HTTP 与 HTTPS 的区别</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="禹衡"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">禹衡</p>
+  <div class="site-description" itemprop="description">此生将无法被定义</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">禹衡</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">81k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:13</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '8cc7c10d257e7c09cd3c',
+      clientSecret: '1ba6a901214a6d75fd0d259addb8cd9fd30eb43d',
+      repo        : 'timdyh.github.io',
+      owner       : 'TimDyh',
+      admin       : ['TimDyh'],
+      id          : '6f26d461f6949ef0a13bb28e68a7429f',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

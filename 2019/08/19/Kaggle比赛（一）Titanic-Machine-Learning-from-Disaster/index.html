@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="泰坦尼克号幸存预测是本小白接触的第一个Kaggle入门比赛，主要参考了以下两篇教程：  https:&#x2F;&#x2F;www.cnblogs.com&#x2F;star-zhao&#x2F;p&#x2F;9801196.html https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;30538352  本模型在Leaderboard上的最高得分为0.79904，排名前13%。 由于这个比赛做得比较早了，当时很多分析的细节都忘了，而且由于">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kaggle比赛（一）Titanic: Machine Learning from Disaster">
+<meta property="og:url" content="http://yoursite.com/2019/08/19/Kaggle%E6%AF%94%E8%B5%9B%EF%BC%88%E4%B8%80%EF%BC%89Titanic-Machine-Learning-from-Disaster/index.html">
+<meta property="og:site_name" content="TimDyh">
+<meta property="og:description" content="泰坦尼克号幸存预测是本小白接触的第一个Kaggle入门比赛，主要参考了以下两篇教程：  https:&#x2F;&#x2F;www.cnblogs.com&#x2F;star-zhao&#x2F;p&#x2F;9801196.html https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;30538352  本模型在Leaderboard上的最高得分为0.79904，排名前13%。 由于这个比赛做得比较早了，当时很多分析的细节都忘了，而且由于">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-08-19T13:56:32.000Z">
+<meta property="article:modified_time" content="2020-08-02T12:55:57.522Z">
+<meta property="article:author" content="禹衡">
+<meta property="article:tag" content="Kaggle">
+<meta property="article:tag" content="机器学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2019/08/19/Kaggle%E6%AF%94%E8%B5%9B%EF%BC%88%E4%B8%80%EF%BC%89Titanic-Machine-Learning-from-Disaster/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Kaggle比赛（一）Titanic: Machine Learning from Disaster | TimDyh</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5a3f05cca5b5d8d38abfd03700d999f3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">TimDyh</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/08/19/Kaggle%E6%AF%94%E8%B5%9B%EF%BC%88%E4%B8%80%EF%BC%89Titanic-Machine-Learning-from-Disaster/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="禹衡">
+      <meta itemprop="description" content="此生将无法被定义">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TimDyh">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kaggle比赛（一）Titanic: Machine Learning from Disaster
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-08-19 21:56:32" itemprop="dateCreated datePublished" datetime="2019-08-19T21:56:32+08:00">2019-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AB%9E%E8%B5%9B/" itemprop="url" rel="index"><span itemprop="name">竞赛</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>泰坦尼克号幸存预测</strong>是本小白接触的第一个Kaggle入门比赛，主要参考了以下两篇教程：</p>
+<ol>
+<li><a href="https://www.cnblogs.com/star-zhao/p/9801196.html" target="_blank">https://www.cnblogs.com/star-zhao/p/9801196.html</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/30538352" target="_blank">https://zhuanlan.zhihu.com/p/30538352</a></li>
+</ol>
+<p>本模型在Leaderboard上的最高得分为0.79904，排名前13%。</p>
+<p>由于这个比赛做得比较早了，当时很多分析的细节都忘了，而且由于是第一次做，整体还是非常简陋的。今天心血来潮，就当做个简单的记录（流水账）。</p>
+<a id="more"></a>
+
+<p>导入相关包：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> GridSearchCV</span><br><span class="line"><span class="keyword">from</span> sklearn.linear_model <span class="keyword">import</span> LinearRegression</span><br><span class="line"><span class="keyword">from</span> sklearn.ensemble <span class="keyword">import</span> GradientBoostingRegressor</span><br><span class="line"><span class="keyword">from</span> sklearn.ensemble <span class="keyword">import</span> ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier, VotingClassifier</span><br></pre></td></tr></table></figure>
+
+<p>读取训练、测试集，合并在一起处理：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">train_raw = pd.read_csv(<span class="string">'datasets/train.csv'</span>)</span><br><span class="line">test_raw = pd.read_csv(<span class="string">'datasets/test.csv'</span>)</span><br><span class="line">train_test = train_raw.append(test_raw, ignore_index=<span class="literal">True</span>, sort=<span class="literal">False</span>)</span><br></pre></td></tr></table></figure>
+
+<p>姓名中的称谓可以在一定程度上体现出人的性别、年龄、身份、社会地位等，因而是一个不可忽略的重要特征。我们首先用正则表达式将Name字段中的称谓信息提取出来，然后做归类：</p>
+<ul>
+<li>Mr、Don代表男性</li>
+<li>Miss、Ms、Mlle代表未婚女子</li>
+<li>Mrs、Mme、Lady、Dona代表已婚女士</li>
+<li>Countess、Jonkheer均为贵族身份</li>
+<li>Capt、Col、Dr、Major、Sir这些少数称谓归为其他一类</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">train_test[<span class="string">'Title'</span>] = train_test[<span class="string">'Name'</span>].apply(<span class="keyword">lambda</span> x: re.search(<span class="string">'(\w+)\.'</span>, x).group(<span class="number">1</span>))</span><br><span class="line">train_test[<span class="string">'Title'</span>].replace([<span class="string">'Don'</span>], <span class="string">'Mr'</span>, inplace=<span class="literal">True</span>)</span><br><span class="line">train_test[<span class="string">'Title'</span>].replace([<span class="string">'Mlle'</span>,<span class="string">'Ms'</span>], <span class="string">'Miss'</span>, inplace=<span class="literal">True</span>)</span><br><span class="line">train_test[<span class="string">'Title'</span>].replace([<span class="string">'Mme'</span>, <span class="string">'Lady'</span>, <span class="string">'Dona'</span>], <span class="string">'Mrs'</span>, inplace=<span class="literal">True</span>)</span><br><span class="line">train_test[<span class="string">'Title'</span>].replace([<span class="string">'Countess'</span>, <span class="string">'Jonkheer'</span>], <span class="string">'Noble'</span>, inplace=<span class="literal">True</span>)</span><br><span class="line">train_test[<span class="string">'Title'</span>].replace([<span class="string">'Capt'</span>, <span class="string">'Col'</span>, <span class="string">'Dr'</span>, <span class="string">'Major'</span>, <span class="string">'Sir'</span>], <span class="string">'Other'</span>, inplace=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+
+<p>对称谓类别进行独热编码（One-Hot encoding）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">title_onehot = pd.get_dummies(train_test[<span class="string">'Title'</span>], prefix=<span class="string">'Title'</span>)</span><br><span class="line">train_test = pd.concat([train_test, title_onehot], axis=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>对性别进行独热处理：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sex_onehot = pd.get_dummies(train_test[<span class="string">'Sex'</span>], prefix=<span class="string">'Sex'</span>)</span><br><span class="line">train_test = pd.concat([train_test, sex_onehot], axis=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>将SibSp和Parch两个特征组合在一起，构造出表示家庭大小的特征，因为分析表明有亲人同行的乘客比独自一人具有更高的存活率。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">train_test[<span class="string">'FamilySize'</span>] = train_test[<span class="string">'SibSp'</span>] + train_test[<span class="string">'Parch'</span>] + <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>用众数对Embarked填补缺失值：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">train_test[<span class="string">'Embarked'</span>].fillna(train_test[<span class="string">'Embarked'</span>].mode()[<span class="number">0</span>], inplace=<span class="literal">True</span>)</span><br><span class="line">embarked_onehot = pd.get_dummies(train_test[<span class="string">'Embarked'</span>], prefix=<span class="string">'Embarked'</span>)</span><br><span class="line">train_test = pd.concat([train_test, embarked_onehot], axis=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>由于Cabin缺失值太多，姑且将有无Cabin作为特征：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">train_test[<span class="string">'Cabin'</span>].fillna(<span class="string">'NO'</span>, inplace=<span class="literal">True</span>)</span><br><span class="line">train_test[<span class="string">'Cabin'</span>] = np.where(train_test[<span class="string">'Cabin'</span>] == <span class="string">'NO'</span>, <span class="string">'NO'</span>, <span class="string">'YES'</span>)</span><br><span class="line">cabin_onehot = pd.get_dummies(train_test[<span class="string">'Cabin'</span>], prefix=<span class="string">'Cabin'</span>)</span><br><span class="line">train_test = pd.concat([train_test, cabin_onehot], axis=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>用同等船舱的票价均值填补Fare的缺失值：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Ktrain_test[&#39;Fare&#39;].fillna(train_test.groupby(&#39;Pclass&#39;)[&#39;Fare&#39;].transform(&#39;mean&#39;), inplace&#x3D;True)</span><br></pre></td></tr></table></figure>
+
+<p>由于有团体票，我们将票价均摊到每个人身上：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shares = train_test.groupby(<span class="string">'Ticket'</span>)[<span class="string">'Fare'</span>].transform(<span class="string">'count'</span>)</span><br><span class="line">train_test[<span class="string">'Fare'</span>] = train_test[<span class="string">'Fare'</span>] / shares</span><br></pre></td></tr></table></figure>
+
+<p>票价分级：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">train_test.loc[train_test[<span class="string">'Fare'</span>] &lt; <span class="number">5</span>, <span class="string">'Fare'</span>] = <span class="number">0</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Fare'</span>] &gt;= <span class="number">5</span>) &amp; (train_test[<span class="string">'Fare'</span>] &lt; <span class="number">10</span>), <span class="string">'Fare'</span>] = <span class="number">1</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Fare'</span>] &gt;= <span class="number">10</span>) &amp; (train_test[<span class="string">'Fare'</span>] &lt; <span class="number">15</span>), <span class="string">'Fare'</span>] = <span class="number">2</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Fare'</span>] &gt;= <span class="number">15</span>) &amp; (train_test[<span class="string">'Fare'</span>] &lt; <span class="number">30</span>), <span class="string">'Fare'</span>] = <span class="number">3</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Fare'</span>] &gt;= <span class="number">30</span>) &amp; (train_test[<span class="string">'Fare'</span>] &lt; <span class="number">60</span>), <span class="string">'Fare'</span>] = <span class="number">4</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Fare'</span>] &gt;= <span class="number">60</span>) &amp; (train_test[<span class="string">'Fare'</span>] &lt; <span class="number">100</span>), <span class="string">'Fare'</span>] = <span class="number">5</span></span><br><span class="line">train_test.loc[train_test[<span class="string">'Fare'</span>] &gt;= <span class="number">100</span>, <span class="string">'Fare'</span>] = <span class="number">6</span></span><br></pre></td></tr></table></figure>
+
+<p>利用shares构造一个新的特征，将买团体票的乘客分为一类，单独买票的分为一类：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">train_test[<span class="string">'GroupTicket'</span>] = np.where(shares == <span class="number">1</span>, <span class="string">'NO'</span>, <span class="string">'YES'</span>)</span><br><span class="line">group_ticket_onehot = pd.get_dummies(train_test[<span class="string">'GroupTicket'</span>], prefix=<span class="string">'GroupTicket'</span>)</span><br><span class="line">train_test = pd.concat([train_test, group_ticket_onehot], axis=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>对于缺失较多的Age项，直接用平均数或者中位数来填充不太合适。这里我们用机器学习算法，利用其他特征来推测年龄。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">missing_age_df = pd.DataFrame(train_test[[<span class="string">'Age'</span>, <span class="string">'Parch'</span>, <span class="string">'Sex'</span>, <span class="string">'SibSp'</span>, <span class="string">'FamilySize'</span>, <span class="string">'Title'</span>, <span class="string">'Fare'</span>, <span class="string">'Pclass'</span>, <span class="string">'Embarked'</span>]])</span><br><span class="line">missing_age_df = pd.get_dummies(missing_age_df,columns=[<span class="string">'Title'</span>, <span class="string">'FamilySize'</span>, <span class="string">'Sex'</span>, <span class="string">'Pclass'</span> ,<span class="string">'Embarked'</span>])</span><br><span class="line">missing_age_train = missing_age_df[missing_age_df[<span class="string">'Age'</span>].notnull()]</span><br><span class="line">missing_age_test = missing_age_df[missing_age_df[<span class="string">'Age'</span>].isnull()]</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">fill_missing_age</span><span class="params">(missing_age_train, missing_age_test)</span>:</span></span><br><span class="line">        missing_age_X_train = missing_age_train.drop([<span class="string">'Age'</span>], axis=<span class="number">1</span>)</span><br><span class="line">        missing_age_Y_train = missing_age_train[<span class="string">'Age'</span>]</span><br><span class="line">        missing_age_X_test = missing_age_test.drop([<span class="string">'Age'</span>], axis=<span class="number">1</span>)</span><br><span class="line">        <span class="comment"># 模型1</span></span><br><span class="line">        gbm_reg = GradientBoostingRegressor(n_estimators=<span class="number">100</span>, max_depth=<span class="number">3</span>, learning_rate=<span class="number">0.01</span>, max_features=<span class="number">3</span>, random_state=<span class="number">42</span>)</span><br><span class="line">        gbm_reg.fit(missing_age_X_train, missing_age_Y_train)</span><br><span class="line">        missing_age_test[<span class="string">'Age_GB'</span>] = gbm_reg.predict(missing_age_X_test)</span><br><span class="line">        <span class="comment"># 模型2</span></span><br><span class="line">        lrf_reg = LinearRegression(fit_intercept=<span class="literal">True</span>, normalize=<span class="literal">True</span>)</span><br><span class="line">        lrf_reg.fit(missing_age_X_train, missing_age_Y_train)</span><br><span class="line">        missing_age_test[<span class="string">'Age_LRF'</span>] = lrf_reg.predict(missing_age_X_test)</span><br><span class="line">        <span class="comment"># 将两个模型预测后的均值作为最终预测结果</span></span><br><span class="line">        missing_age_test[<span class="string">'Age'</span>] = np.mean([missing_age_test[<span class="string">'Age_GB'</span>], missing_age_test[<span class="string">'Age_LRF'</span>]])</span><br><span class="line">        <span class="keyword">return</span> missing_age_test</span><br><span class="line">    </span><br><span class="line">train_test.loc[(train_test.Age.isnull()), <span class="string">'Age'</span>] = fill_missing_age(missing_age_train, missing_age_test)</span><br></pre></td></tr></table></figure>
+
+<p>划分年龄段：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">train_test.loc[train_test[<span class="string">'Age'</span>] &lt; <span class="number">9</span>, <span class="string">'Age'</span>] = <span class="number">0</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">9</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">18</span>), <span class="string">'Age'</span>] = <span class="number">1</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">18</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">27</span>), <span class="string">'Age'</span>] = <span class="number">2</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">27</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">36</span>), <span class="string">'Age'</span>] = <span class="number">3</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">36</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">45</span>), <span class="string">'Age'</span>] = <span class="number">4</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">45</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">54</span>), <span class="string">'Age'</span>] = <span class="number">5</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">54</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">63</span>), <span class="string">'Age'</span>] = <span class="number">6</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">63</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">72</span>), <span class="string">'Age'</span>] = <span class="number">7</span></span><br><span class="line">train_test.loc[(train_test[<span class="string">'Age'</span>] &gt;= <span class="number">72</span>) &amp; (train_test[<span class="string">'Age'</span>] &lt; <span class="number">81</span>), <span class="string">'Age'</span>] = <span class="number">8</span></span><br><span class="line">train_test.loc[train_test[<span class="string">'Age'</span>] &gt;= <span class="number">81</span>, <span class="string">'Age'</span>] = <span class="number">9</span></span><br></pre></td></tr></table></figure>
+
+<p>保存PassengerId：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">passengerId_test = train_test[<span class="string">'PassengerId'</span>][<span class="number">891</span>:]</span><br></pre></td></tr></table></figure>
+
+<p>丢弃多余的特征：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">train_test.drop([<span class="string">'PassengerId'</span>, <span class="string">'Name'</span>, <span class="string">'SibSp'</span>, <span class="string">'Parch'</span>, <span class="string">'Title'</span>, <span class="string">'Sex'</span>, <span class="string">'Embarked'</span>, <span class="string">'Cabin'</span>, <span class="string">'Ticket'</span>, <span class="string">'GroupTicket'</span>], axis=<span class="number">1</span>, inplace=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+
+<p>划分训练集和测试集：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">train = train_test[:<span class="number">891</span>]</span><br><span class="line">test = train_test[<span class="number">891</span>:]</span><br><span class="line">X_train = train.drop([<span class="string">'Survived'</span>], axis=<span class="number">1</span>)</span><br><span class="line">y_train = train[<span class="string">'Survived'</span>]</span><br><span class="line">X_test = test.drop([<span class="string">'Survived'</span>], axis=<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<p>分别用随机森林、极端随机树和梯度提升树进行训练，然后利用VotingClassifer建立最终预测模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">rf = RandomForestClassifier(n_estimators=<span class="number">500</span>, max_depth=<span class="number">5</span>, min_samples_split=<span class="number">13</span>)</span><br><span class="line">et = ExtraTreesClassifier(n_estimators=<span class="number">500</span>, max_depth=<span class="number">7</span>, min_samples_split=<span class="number">8</span>)</span><br><span class="line">gbm = GradientBoostingClassifier(n_estimators=<span class="number">500</span>, learning_rate=<span class="number">0.0135</span>)</span><br><span class="line">voting = VotingClassifier(estimators=[(<span class="string">'rf'</span>, rf), (<span class="string">'et'</span>, et), (<span class="string">'gbm'</span>, gbm)], voting=<span class="string">'soft'</span>)</span><br><span class="line">voting.fit(X_train, y_train)</span><br></pre></td></tr></table></figure>
+
+<p>预测并生成提交文件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">y_predict = voting.predict(X_test)</span><br><span class="line">submission = pd.DataFrame(&#123;<span class="string">'PassengerId'</span>: passengerId_test, <span class="string">'Survived'</span>: y_predict.astype(np.int32)&#125;)</span><br><span class="line">submission.to_csv(<span class="string">'submission.csv'</span>, index=<span class="literal">False</span>)</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kaggle/" rel="tag"># Kaggle</a>
+              <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag"># 机器学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/08/19/%E6%B4%9B%E8%B0%B7-P1080-%E5%9B%BD%E7%8E%8B%E6%B8%B8%E6%88%8F/" rel="prev" title="洛谷 P1080 国王游戏">
+      <i class="fa fa-chevron-left"></i> 洛谷 P1080 国王游戏
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/08/21/Kaggle%E6%AF%94%E8%B5%9B%EF%BC%88%E4%BA%8C%EF%BC%89House-Prices-Advanced-Regression-Techniques/" rel="next" title="Kaggle比赛（二）House Prices: Advanced Regression Techniques">
+      Kaggle比赛（二）House Prices: Advanced Regression Techniques <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="禹衡"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">禹衡</p>
+  <div class="site-description" itemprop="description">此生将无法被定义</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">禹衡</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">81k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:13</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '8cc7c10d257e7c09cd3c',
+      clientSecret: '1ba6a901214a6d75fd0d259addb8cd9fd30eb43d',
+      repo        : 'timdyh.github.io',
+      owner       : 'TimDyh',
+      admin       : ['TimDyh'],
+      id          : '684dbcf2c67af60bb79014d5b46454e7',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
