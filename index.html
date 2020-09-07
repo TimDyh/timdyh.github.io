@@ -172,6 +172,130 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="禹衡">
+      <meta itemprop="description" content="此生将无法被定义">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TimDyh">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B/" class="post-title-link" itemprop="url">计算机启动过程</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-07 17:47:12" itemprop="dateCreated datePublished" datetime="2020-09-07T17:47:12+08:00">2020-09-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>对于经典的 BIOS 技术，整个启动过程主要分为四个阶段。</p>
+<h3 id="1-第一阶段：BIOS"><a href="#1-第一阶段：BIOS" class="headerlink" title="1. 第一阶段：BIOS"></a>1. 第一阶段：BIOS</h3><p>计算机的主板上有一块 ROM 芯片，开机程序被刷入芯片，计算机通电后，第一件事就是读取它。这块芯片里的程序叫做”基本输入输出系统”（Basic Input/Output System），简称为 <a href="http://en.wikipedia.org/wiki/BIOS" target="_blank" rel="noopener">BIOS</a>。在 BIOS 内有底层 I/O 软件，包括读键盘、写屏幕、磁盘 I/O 以及其他过程。如今，它被保存在闪存中，是非易失性的，当 BIOS 中发现错误时，可以由操作系统进行更新。</p>
+<h4 id="1-1-硬件自检"><a href="#1-1-硬件自检" class="headerlink" title="1.1 硬件自检"></a>1.1 硬件自检</h4><p>BIOS 程序首先检查，计算机硬件能否满足运行的基本条件，这叫做”硬件自检”（Power-On Self-Test），缩写为 <a href="http://en.wikipedia.org/wiki/Power-on_self-test" target="_blank" rel="noopener">POST</a>。</p>
+<p>如果硬件出现问题，主板会发出不同含义的<a href="http://en.wikipedia.org/wiki/Power-on_self-test#Original_IBM_POST_beep_codes" target="_blank" rel="noopener">蜂鸣</a>，启动中止。如果没有问题，屏幕就会显示出 CPU、内存、硬盘等信息。</p>
+<h4 id="1-2-启动顺序"><a href="#1-2-启动顺序" class="headerlink" title="1.2 启动顺序"></a>1.2 启动顺序</h4><p>硬件自检完成后，BIOS 把控制权转交给下一阶段的启动程序。</p>
+<p>这时，BIOS 需要知道，”下一阶段的启动程序”具体存放在哪一个设备。也就是说，BIOS 需要有一个外部储存设备的排序，排在前面的设备就是优先转交控制权的设备。这种排序叫做”启动顺序”（Boot Sequence）。</p>
+<p>打开 BIOS 的操作界面，里面有一项就是”设定启动顺序”。</p>
+<h3 id="2-第二阶段：主引导记录"><a href="#2-第二阶段：主引导记录" class="headerlink" title="2. 第二阶段：主引导记录"></a>2. 第二阶段：主引导记录</h3><p>BIOS 按照”启动顺序”，把控制权转交给排在第一位的储存设备。</p>
+<p>这时，计算机读取该设备的第一个扇区，也就是读取最前面的 512 个字节。如果这 512 个字节的最后两个字节是 0x55 和 0xAA，表明这个设备可以用于启动；如果不是，表明设备不能用于启动，控制权于是被转交给”启动顺序”中的下一个设备。</p>
+<p>这最前面的 512 个字节，就叫做<a href="http://en.wikipedia.org/wiki/Master_boot_record" target="_blank" rel="noopener">“主引导记录”</a>（Master boot record，缩写为 MBR）。</p>
+<h4 id="2-1-主引导记录的结构"><a href="#2-1-主引导记录的结构" class="headerlink" title="2.1 主引导记录的结构"></a>2.1 主引导记录的结构</h4><p>“主引导记录”只有 512 个字节，放不了太多东西。它的主要作用是，告诉计算机到硬盘的哪一个位置去找操作系统。</p>
+<p>主引导记录由三个部分组成：</p>
+<p>（1）第 1-446 字节：调用操作系统的机器码。</p>
+<p>（2）第 447-510 字节：分区表（Partition table）。</p>
+<p>（3）第 511-512 字节：主引导记录签名（0x55 和 0xAA）。</p>
+<p>其中，第二部分”分区表”的作用，是将硬盘分成若干个区。</p>
+<h4 id="2-2-分区表"><a href="#2-2-分区表" class="headerlink" title="2.2 分区表"></a>2.2 分区表</h4><p>硬盘分区有很多<a href="http://en.wikipedia.org/wiki/Disk_partitioning#Benefits_of_multiple_partitions" target="_blank" rel="noopener">好处</a>。考虑到每个区可以安装不同的操作系统，”主引导记录”因此必须知道将控制权转交给哪个区。</p>
+<p>分区表的长度只有 64 个字节，里面又分成四项，每项 16 个字节。所以，一个硬盘最多只能分四个一级分区，又叫做”主分区”。</p>
+<p>每个主分区的 16 个字节，由 6 个部分组成：</p>
+<p>（1）第 1 个字节：如果为 0x80，就表示该主分区是激活分区，控制权要转交给这个分区。四个主分区里面只能有一个是激活的。</p>
+<p>（2）第 2-4 个字节：主分区第一个扇区的物理位置（柱面、磁头、扇区号等等）。</p>
+<p>（3）第 5 个字节：<a href="http://en.wikipedia.org/wiki/Partition_type" target="_blank" rel="noopener">主分区类型</a>。</p>
+<p>（4）第 6-8 个字节：主分区最后一个扇区的物理位置。</p>
+<p>（5）第 9-12 字节：该主分区第一个扇区的逻辑地址。</p>
+<p>（6）第 13-16 字节：主分区的扇区总数。</p>
+<p>最后的四个字节（”主分区的扇区总数”），决定了这个主分区的长度。也就是说，一个主分区的扇区总数最多不超过 2 的 32 次方。</p>
+<h3 id="3-第三阶段：硬盘启动"><a href="#3-第三阶段：硬盘启动" class="headerlink" title="3. 第三阶段：硬盘启动"></a>3. 第三阶段：硬盘启动</h3><p>这时，计算机的控制权就要转交给硬盘的某个分区了，这里又分成三种情况。</p>
+<h4 id="3-1-情况A：卷引导记录"><a href="#3-1-情况A：卷引导记录" class="headerlink" title="3.1 情况A：卷引导记录"></a>3.1 情况A：卷引导记录</h4><p>上一节提到，四个主分区里面，只有一个是激活的。计算机会读取激活分区的第一个扇区，叫做<a href="http://en.wikipedia.org/wiki/Volume_Boot_Record" target="_blank" rel="noopener">“卷引导记录</a>“（Volume boot record，缩写为 VBR）。</p>
+<p>“卷引导记录”的主要作用是，告诉计算机，操作系统在这个分区里的位置。然后，计算机就会加载操作系统了。</p>
+<h4 id="3-2-情况B：扩展分区和逻辑分区"><a href="#3-2-情况B：扩展分区和逻辑分区" class="headerlink" title="3.2 情况B：扩展分区和逻辑分区"></a>3.2 情况B：扩展分区和逻辑分区</h4><p>随着硬盘越来越大，四个主分区已经不够了，需要更多的分区。但是，分区表只有四项，因此规定有且仅有一个区可以被定义成”扩展分区”（Extended partition）。</p>
+<p>所谓”扩展分区”，就是指这个区里面又分成多个区。这种分区里面的分区，就叫做”逻辑分区”（logical partition）。</p>
+<p>计算机先读取扩展分区的第一个扇区，叫做<a href="http://en.wikipedia.org/wiki/Extended_partition" target="_blank" rel="noopener">“扩展引导记录”</a>（Extended boot record，缩写为 EBR）。它里面也包含一张 64 字节的分区表，但是最多只有两项（也就是两个逻辑分区）。</p>
+<p>计算机接着读取第二个逻辑分区的第一个扇区，再从里面的分区表中找到第三个逻辑分区的位置，以此类推，直到某个逻辑分区的分区表只包含它自身为止（即只有一个分区项）。因此，扩展分区可以包含无数个逻辑分区。</p>
+<p>但是，似乎很少通过这种方式启动操作系统。如果操作系统确实安装在扩展分区，一般采用下一种方式启动。</p>
+<h4 id="3-3-情况C：启动管理器"><a href="#3-3-情况C：启动管理器" class="headerlink" title="3.3 情况C：启动管理器"></a>3.3 情况C：启动管理器</h4><p>在这种情况下，计算机读取”主引导记录”前面 446 字节的机器码之后，不再把控制权转交给某一个分区，而是运行事先安装的<a href="http://en.wikipedia.org/wiki/Boot_loader#Modern_boot_loaders" target="_blank" rel="noopener">“启动管理器”</a>（boot loader），由用户选择启动哪一个操作系统。</p>
+<p>Linux 环境中，目前最流行的启动管理器是 <a href="http://en.wikipedia.org/wiki/GNU_GRUB" target="_blank" rel="noopener">Grub</a>。</p>
+<h3 id="第四阶段：操作系统"><a href="#第四阶段：操作系统" class="headerlink" title="第四阶段：操作系统"></a>第四阶段：操作系统</h3><p>控制权转交给操作系统后，操作系统的内核首先被载入内存。</p>
+<p>以 Linux 系统为例，先载入 /boot 目录下面的 kernel。内核加载成功后，第一个运行的程序是 /sbin/init。它根据配置文件（Debian 系统是 /etc/initab）产生 init 进程。这是 Linux 启动后的第一个进程，pid 进程编号为 1，其他进程都是它的后代。</p>
+<p>然后，init 线程加载系统的各个模块，比如窗口程序和网络程序，直至执行 /bin/login 程序，跳出登录界面，等待用户输入用户名和密码。</p>
+<p>至此，全部启动过程完成。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ol>
+<li><a href="http://www.ruanyifeng.com/blog/2013/02/booting.html#comment-text" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2013/02/booting.html#comment-text</a></li>
+<li>cxuan-os-修改第二版.pdf</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/06/%E5%B0%A4%E7%93%A6%E5%B0%94%C2%B7%E8%B5%AB%E6%8B%89%E5%88%A9%E3%80%8A%E4%BA%BA%E7%B1%BB%E7%AE%80%E5%8F%B2%E3%80%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -967,97 +1091,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/15/HTTP-%E4%B8%8E-HTTPS-%E5%8D%8F%E8%AE%AE%E5%88%86%E6%9E%90/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpeg">
-      <meta itemprop="name" content="禹衡">
-      <meta itemprop="description" content="此生将无法被定义">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="TimDyh">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/15/HTTP-%E4%B8%8E-HTTPS-%E5%8D%8F%E8%AE%AE%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">HTTP 与 HTTPS 协议分析</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-15 23:12:32" itemprop="dateCreated datePublished" datetime="2020-07-15T23:12:32+08:00">2020-07-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>3k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>3 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>万维网客户程序与万维网服务器程序之间的交互遵守严格的协议，这就是超文本传输协议 HTTP（HyperText Transfer Protocol）。HTTP 是一个应用层协议，它使用 TCP 连接进行可靠的传送。</p>
-<p>安全套接字层 SSL（Secure Socket Layer） 和运输层安全 TLS（Transport Layer Security）是现在广泛使用的两个安全协议，作用在端系统应用层的 HTTP 和运输层之间，在 TCP 之上建立起一个安全通道，为通过 TCP 传输的应用层数据提供安全保障。</p>
-<p>超文本传输安全协议 HTTPS（Hyper Text Transfer Protocol over Secure Socket Layer）在 HTTP 的基础上加入 SSL 层，通过传输加密和身份认证保证了传输过程的安全性。</p>
-<p>本次实验使用 Wireshark 报文分析软件，分别通过分析 HTTP 和 HTTPS 协议的交互过程和报文内容，研究二者的工作原理及异同之处。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/07/15/HTTP-%E4%B8%8E-HTTPS-%E5%8D%8F%E8%AE%AE%E5%88%86%E6%9E%90/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1129,7 +1162,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1142,7 +1175,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1178,12 +1211,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">91k</span>
+    <span title="站点总字数">94k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">1:23</span>
+    <span title="站点阅读时长">1:25</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
   </div>
