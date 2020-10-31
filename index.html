@@ -233,54 +233,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="内核源码树"><a href="#内核源码树" class="headerlink" title="内核源码树"></a>内核源码树</h3><p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-10-31-103951.jpg" alt=""></p>
-<h3 id="配置内核"><a href="#配置内核" class="headerlink" title="配置内核"></a>配置内核</h3><p>内核配置由配置选项控制，它们均以 <code>CONFIG</code> 为前缀，具有 <code>CONFIG_FEATURE</code> 这样的形式。例如，对称多处理（SMP）由配置选项 <code>CONFIG_SMP</code> 控制。配置选项既可以用来决定要编译的文件，也可以通过预处理指令来操纵代码。</p>
-<p>配置选项可以为布尔值或三态值。布尔值选项为 <code>yes</code> 或 <code>no</code>。 内核功能（例如 <code>CONFIG_PREEMPT</code>）通常是布尔值。三态选项是 <code>yes</code>、<code>no</code> 或 <code>module</code> 之一。<code>module</code> 意味着该配置项被选定了，但编译的时候这部分功能的实现代码是以模块（一种可以动态安装的独立代码段）的形式生成。在三态的情况下，<code>yes</code> 选项明确表示把代码编译进主内核映像中，而不是作为一个模块。驱动程序一般都用三态值的配置项。<br>配置选项也可以是字符串或整数。这些选项不控制编译过程，而是指定内核源码可以作为预处理宏访问的值。例如，配置选项可以指定静态分配数组的大小。</p>
-<p>内核提供了多种工具来简化配置。</p>
-<p>基于文本的命令行程序：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make config</span><br></pre></td></tr></table></figure>
-
-<p>基于 ncurses 的图形程序：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make menuconfig</span><br></pre></td></tr></table></figure>
-
-<p>基于 gtk+ 的图形程序：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make gconfig</span><br></pre></td></tr></table></figure>
-
-<p>根据体系结构创建默认配置：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make defconfig</span><br></pre></td></tr></table></figure>
-
-<p>配置选项存储在内核源码树根目录下的 <code>.config</code> 文件中，也可以直接编辑此文件来修改配置。在对配置文件进行更改之后，或者在新的内核树上使用现有的配置文件时，更新配置并使之生效：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make oldconfig</span><br></pre></td></tr></table></figure>
-
-<p>在编译内核之前，应始终运行此命令。</p>
-<p>配置选项 <code>CONFIG_IKCONFIG_PROC</code> 将完整的压缩后的内核配置文件放置在 <code>/proc/config.gz</code> 中。这使得在编译新内核时克隆当前配置变得容易。如果当前内核启用了此选项，则可以从 <code>/proc</code> 中复制配置，并使用它来编译新的内核：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">zcat /proc/config.gz &gt; .config</span><br><span class="line">make oldconfig</span><br></pre></td></tr></table></figure>
-
-<p>配置完成后，使用以下命令进行编译：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make</span><br></pre></td></tr></table></figure>
-
-<h3 id="减少编译的垃圾信息"><a href="#减少编译的垃圾信息" class="headerlink" title="减少编译的垃圾信息"></a>减少编译的垃圾信息</h3><p>过滤垃圾信息但仍然能看到警告和错误的一个技巧是重定向 <code>make</code> 的输出：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make &gt; ../detritus</span><br></pre></td></tr></table></figure>
-
-<p>如果需要查看编译输出，则可以阅读该文件，但一般也不需要，所以可以直接把无用的输出重定向到“黑洞”中：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make &gt; /dev/null</span><br></pre></td></tr></table></figure>
-
-<h3 id="产生多个编译作业"><a href="#产生多个编译作业" class="headerlink" title="产生多个编译作业"></a>产生多个编译作业</h3><p><code>make</code> 程序提供了一项功能，可以将编译过程分为多个并行作业，每一个作业分别并发运行，从而大大加快了多处理系统上的编译过程，且提高了处理器利用率，这是因为编译大型源码树的时间包括大量的 I/O 等待时间。</p>
-<p>默认情况下，<code>make</code> 只会生成一个作业，因为 Makefile 经常会具有不正确的依赖关系信息，此时多个作业可能会相互踩踏，从而导致编译过程出错。然而内核的 Makefile 具有正确的依赖关系信息，因此生成多个作业不会导致失败。</p>
-<p>要通过多个 <code>make</code> 作业编译内核，使用：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make -jn</span><br></pre></td></tr></table></figure>
-
-<p>这里，<code>n</code> 是要产生的作业数。通常的做法是让每个处理器产生 1 或 2 个作业。例如，在 16 核计算机上，可以使用：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make -j32 &gt; /dev/null</span><br></pre></td></tr></table></figure>
-
-<p>使用出色的 distcc 或 ccache 等实用程序，也可以大大改善内核的编译时间。</p>
-<h3 id="安装新内核"><a href="#安装新内核" class="headerlink" title="安装新内核"></a>安装新内核</h3><p>内核编译后需要安装。安装方式与体系结构和启动引导工具（boot loader）有关。查阅启动引导工具的说明，按照指导将内核映像拷贝到合适的位置，并按照启动要求安装它。始终保留一两个已知安全的内核，以防新内核出现问题。</p>
-<p>所幸，模块的安装是自动的，并且与体系结构无关。以 root 身份，只需运行：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make modules_install</span><br></pre></td></tr></table></figure>
-
-<p>这会将所有已编译的模块安装到 <code>/lib/modules</code> 下的正确位置。</p>
-<p>编译过程中还将在内核源码树的根目录下创建文件 <code>System.map</code>。它包含一个符号查找表，将内核符号映射到其起始地址，在调试过程中用于将内存地址转换为函数名和变量名。</p>
-
+          <h3 id="内核源码树"><a href="#内核源码树" class="headerlink" title="内核源码树"></a>内核源码树</h3><p>下图展示了内核源码树根目录中的各目录及其描述。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/10/31/Linux-Kernel-Development-%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
