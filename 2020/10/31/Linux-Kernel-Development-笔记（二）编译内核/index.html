@@ -30,7 +30,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-10-31-103951.jpg">
 <meta property="article:published_time" content="2020-10-31T12:19:04.000Z">
-<meta property="article:modified_time" content="2020-10-31T13:32:30.242Z">
+<meta property="article:modified_time" content="2020-10-31T13:34:23.948Z">
 <meta property="article:author" content="禹衡">
 <meta property="article:tag" content="Linux">
 <meta property="article:tag" content="操作系统">
@@ -290,7 +290,7 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make -j32 &gt; /dev/null</span><br></pre></td></tr></table></figure>
 
 <p>使用出色的 distcc 或 ccache 等实用程序，也可以大大改善内核的编译时间。</p>
-<h3 id="安装新内核"><a href="#安装新内核" class="headerlink" title="安装新内核"></a>安装新内核</h3><p>内核编译后需要安装。安装方式与体系结构和启动引导工具（boot loader）有关。查阅启动引导工具的说明，按照指导将内核映像拷贝到合适的位置，并按照启动要求安装它。始终保留一两个已知安全的内核，以防新内核出现问题。</p>
+<h3 id="安装新内核"><a href="#安装新内核" class="headerlink" title="安装新内核"></a>安装新内核</h3><p>内核编译后需要安装。安装方式与体系结构和启动引导工具（boot loader）有关。查阅启动引导工具的说明，按照指导将内核映像拷贝到合适的位置，并按照启动要求安装它。应始终保留一两个已知安全的内核，以防新内核出现问题。</p>
 <p>所幸，模块的安装是自动的，并且与体系结构无关。以 root 身份，只需运行：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make modules_install</span><br></pre></td></tr></table></figure>
 
