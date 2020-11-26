@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="MPI 与 MPICH 简介MPI (Message Passing Interface) 是目前一种比较著名的应用于并行环境的消息传递标准，支持点对点和广播。MPI 是一套信息传递应用程序接口，包括协议和和语义说明，它们指明其如何在各种实现中发挥其特性。MPI 的目标是高性能、大规模性和可移植性，在今天仍为高性能计算的主要模型。 MPICH 是 MPI1.2 标准的一个完全实现，也是应用范围最广">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初探 MPICH 的使用及 MPI 并行程序设计">
+<meta property="og:url" content="http://yoursite.com/2020/11/26/%E5%88%9D%E6%8E%A2-MPICH-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A-MPI-%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="TimDyh">
+<meta property="og:description" content="MPI 与 MPICH 简介MPI (Message Passing Interface) 是目前一种比较著名的应用于并行环境的消息传递标准，支持点对点和广播。MPI 是一套信息传递应用程序接口，包括协议和和语义说明，它们指明其如何在各种实现中发挥其特性。MPI 的目标是高性能、大规模性和可移植性，在今天仍为高性能计算的主要模型。 MPICH 是 MPI1.2 标准的一个完全实现，也是应用范围最广">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041136.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41140.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041139.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041142.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041141.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041138.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041137.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041143.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041144.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041140.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41143.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41137.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041058.jpg">
+<meta property="article:published_time" content="2020-11-26T04:13:45.000Z">
+<meta property="article:modified_time" content="2020-11-26T04:16:28.063Z">
+<meta property="article:author" content="禹衡">
+<meta property="article:tag" content="并行计算">
+<meta property="article:tag" content="MPI">
+<meta property="article:tag" content="C&#x2F;C++">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041136.jpg">
+
+<link rel="canonical" href="http://yoursite.com/2020/11/26/%E5%88%9D%E6%8E%A2-MPICH-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A-MPI-%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>初探 MPICH 的使用及 MPI 并行程序设计 | TimDyh</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5a3f05cca5b5d8d38abfd03700d999f3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">TimDyh</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/11/26/%E5%88%9D%E6%8E%A2-MPICH-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A-MPI-%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="禹衡">
+      <meta itemprop="description" content="此生将无法被定义">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TimDyh">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          初探 MPICH 的使用及 MPI 并行程序设计
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-26 12:13:45" itemprop="dateCreated datePublished" datetime="2020-11-26T12:13:45+08:00">2020-11-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="MPI-与-MPICH-简介"><a href="#MPI-与-MPICH-简介" class="headerlink" title="MPI 与 MPICH 简介"></a>MPI 与 MPICH 简介</h2><p>MPI (Message Passing Interface) 是目前一种比较著名的应用于并行环境的消息传递标准，支持点对点和广播。MPI 是一套信息传递应用程序接口，包括协议和和语义说明，它们指明其如何在各种实现中发挥其特性。MPI 的目标是高性能、大规模性和可移植性，在今天仍为高性能计算的主要模型。</p>
+<p>MPICH 是 MPI1.2 标准的一个完全实现，也是应用范围最广的一种并行及分布式环境，由 Argonne 国家实验室和密西西比州立大学联合开发，具有更好的可移植性。MPICH 除包含 MPI 函数库之外，还包含了一套程序设计以及运行环境。通过安装 MPICH 构建 MPI 编程环境，从而进行并行程序的开发。</p>
+<a id="more"></a>
+
+
+
+<h2 id="Windows-下-MPICH-的安装与配置"><a href="#Windows-下-MPICH-的安装与配置" class="headerlink" title="Windows 下 MPICH 的安装与配置"></a>Windows 下 MPICH 的安装与配置</h2><h3 id="系统要求"><a href="#系统要求" class="headerlink" title="系统要求"></a>系统要求</h3><p>安装 MPICH for Microsoft Windows 对系统有如下要求：</p>
+<ul>
+<li>Windows NT4/2000/XP 的 Professional 或 Server 版（不支持 Windows95/98）</li>
+<li>所有主机必须能够建立 TCP/IP 连接</li>
+<li>MPICH支持的编译器有：MS VC++ 6.x、MS VC++.NET、Compaq Visual Fortran 6.x、Intel Fortran、gcc 以及 g77。安装 MPICH，必须以管理员的身份登录。</li>
+</ul>
+<h3 id="实验环境与工具"><a href="#实验环境与工具" class="headerlink" title="实验环境与工具"></a>实验环境与工具</h3><p>由于本人物理机为 MacBook Pro，因此实验将在三台 Windows 虚拟机中进行，其两两均可 ping 通。</p>
+<ul>
+<li>物理机操作系统：macOS Catalina 10.15.6</li>
+<li>虚拟机操作系统：Windows XP SP3</li>
+<li>虚拟机软件：VMware Fusion 12.0.0</li>
+<li>编译器：Visual C++ 6.0</li>
+<li>MPICH 1.2.5</li>
+</ul>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>以管理员的身份登录每台主机，在所有主机上建立一个同样的账户（当然也可以每个机器使用不同的用户名和账户，然后建立一个配置文件，使用命令行的方式运行程序），然后运行下载的安装文件，将 MPICH 安装到每台主机上。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041136.jpg" alt=""></p>
+<p>打开“任务管理器”中的“进程”选项卡，查看是否有一个 mpd.exe 的进程，如果有的话说明安装成功。以后每次启动系统，该进程将自动运行。</p>
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41140.jpg" style="zoom: 50%;" />
+
+
+
+<h3 id="注册与配置"><a href="#注册与配置" class="headerlink" title="注册与配置"></a>注册与配置</h3><p>安装好 MPICH 之后还必须对每台计算机进行注册和配置才能使用。其中注册必须每台计算机都要进行，配置只要在主控的计算机执行就行了。</p>
+<p>注册的目的是，将先前在每台计算机上申请的账号与密码注册到 MPICH 中去，这样 MPICH 才能在网络环境中访问每台主机。运行“mpich\mpd\bin\MPIRegister.exe”，首先会提示输入用户账号，然后会提示输入两边密码，之后会问你是否保持上面的设定。如果选择是，则上面的信息将写入硬盘，否则保存在内存中，再重新启动之后就不存在了。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041139.jpg" alt="MPIRegister"></p>
+<p>为了让程序在许多主机上执行，而不需建立配置文件来给出相应的各个主机的信息，主控机必须直到当前可用的主机的信息。这时就需要运行 MPICH 的配置程序来进行配置了。MPICH 提供的配置程序是一个图形界面的程序，可以从“开始-&gt;程序-&gt;MPICH-&gt;mpd-&gt;MPICH Configuration tool”启动。启动之后的界面如下图所示：</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041142.jpg" alt="MPICH Configuration tool"></p>
+<p>整个界面分为三栏，在第一栏中点击Select（1号按钮），然后在跳出的对话框中选择安装了 MPICH 的主机名。之后在第一栏的编辑框中会显示出所有选择的主机。检查无误后，点击第二栏的 Apply（2号按钮），这时下方的进度条会显示对各主机核查的情况，如果没问题整个进度条会变为蓝色。最后点击OK（3号按钮）。整个配置就完成了。</p>
+<h3 id="MPICH-与编译环境的整合"><a href="#MPICH-与编译环境的整合" class="headerlink" title="MPICH 与编译环境的整合"></a>MPICH 与编译环境的整合</h3><p>MPICH 提供了 C 语言和 Fortran 语言的接口。要编译一个 MPI+C 或 MPI+Fortran 的程序必须对编译器进行设置。下面以 Visual C++ 6.0 为例进行说明。</p>
+<p>在 Visual C++ 6 中编译一个 MPI+C 的程序的步骤如下：</p>
+<ol>
+<li><p>打开 Visual C++ 6 的 Develop Studio。</p>
+</li>
+<li><p>新建一个工程，通常为 Win32 Console Application。</p>
+</li>
+<li><p>在新的工程的编辑界面下，按 Alt+F7 打开工程设置对话框。</p>
+</li>
+<li><p>切换到 C/C++ 选项卡。首先选择“Win32 Debug”，再选择“Code Generation”，再选择“Debug Multithreaded”。这时在“Project Options”的文本框中显示“/MT”表示设置成功。然后选择“Win32 Release”重复上述步骤。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041141.jpg" alt="Visual C++设置（1）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041138.jpg" alt="Visual C++设置（2）"></p>
+</li>
+<li><p>在 C/C++ 选项卡中，选择“All Configurations”。选择“Preprocessor”，在“Additional include directories”的文本框中输入 MPICH 所附带的头文件的目录。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041137.jpg" alt="Visual C++设置（3）"></p>
+</li>
+<li><p>在 Link 选项卡中，选择“All Configurations”。然后再选择“Input”，在“Additional library path”的文本框中输入 MPICH 所附带的库文件的目录。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041143.jpg" alt="Visual C++设置（4）"></p>
+</li>
+<li><p>在 Link 选项卡中，选择“All Configurations”。然后再选择“General”，然后在“Object/library modules”的文本框中添加“ws2_32.lib”。点击“OK”。这时在“Common Options”中会出现“ws2_32.lib”。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041144.jpg" alt="Visual C++设置（5）"></p>
+</li>
+<li><p>在 Link 选项卡中，选择“Win32 Debug”。然后再选择“General”，然后在“Object/library modules”的文本框中添加“mpichd.lib”。点击“OK”。这时在“Project Options”中会出现“mpichd.lib”。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041140.jpg" alt="Visual C++设置（6）"></p>
+</li>
+<li><p>在 Link 选项卡中，选择“Win32 Release”。然后再选择“General”，然后在“Object/library modules”的文本框中添加“mpich.lib”。点击“OK”。这时在“Project Options”中会出现“mpich.lib”。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41143.jpg" alt="Visual C++设置（7）"></p>
+</li>
+<li><p>关闭工程设置对话框。</p>
+</li>
+</ol>
+<h3 id="样例程序的运行"><a href="#样例程序的运行" class="headerlink" title="样例程序的运行"></a>样例程序的运行</h3><p>在“MPICH\SDK\Examples\nt\Basic”有一个简单的计算 π 的程序，在 VC 下编译成可执行程序就可应用来测试并行环境。</p>
+<p>在 MPICH 中运行并行程序有两种方式：命令行方式和图形方式。命令行方式可以使用配置文件，功能比较强，但操作复杂易出错。图形方式简单明了，下面以图形方式说明如何运行一个测试程序来测试并行环境。</p>
+<p>在运行一个程序之前，首先要做的事是将待运行的目标程序复制到所有的主机的相同目录下，运行程序的步骤如下：从“开始-&gt;程序-&gt;MPICH-&gt;mpd-&gt;MPIRun”启动图形方式的 MPI 环境。首先，选择待运行的程序，点击右上角的“..”按钮，选择相应的程序；然后选择需要用于计算的主机个数，指定参加运算的主机名；最后点击Run，运行程序。运行的结果会显示在文本框，不同主机的输出信息会以不同的颜色标出。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41137.jpg" alt="MPIRun"></p>
+<h2 id="基于-MPI-的并行程序设计"><a href="#基于-MPI-的并行程序设计" class="headerlink" title="基于 MPI 的并行程序设计"></a>基于 MPI 的并行程序设计</h2><p>并行的程序设计的核心问题是任务分配和通信，MPI 对通信提供了良好的支持，所以如何分配任务成了我们主要关心的问题。这里通过对一个实例的分析和实现来简要的介绍一下如何使用 MPI 来构造一个对等模式的并行程序。</p>
+<blockquote>
+<p>实例：求两个向量的点积。</p>
+</blockquote>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>这个问题的处理对象是两个数组，我们要把向量的各分量分配到各个处理器上去，在每个处理器上分别求点积，然后再将所有处理器计算出来的“部分点积”累加起来，就可以得出最后结果。</p>
+<p>假设处理器个数为 <code>size</code>，向量维度为 <code>VectorSize</code>，则可以计算出每个处理器至少分配到的分量数：<br>$$<br>AverageComponentNumber = VectorSize/size<br>$$<br>如果处理器个数不能整除行数，这样将有<br>$$<br>HeavyProcessorNumber = VectorSize \bmod size<br>$$<br>个处理器分得 <code>AverageComponentNumber + 1</code> 个分量。</p>
+<p>我们规定编号小的处理器分得更多的行，这样就可以得到编号为 <code>rank</code> 的处理器分得的分量数：<br>$$<br>MyComponentNumber = \begin{cases} AverageComponentNumber+1 &amp;rank&lt;HeavyProcessorNumber \cr AverageComponentNumber &amp;rank \ge HeavyProcessorNumber \end{cases}<br>$$<br>有了每个处理器分配的行数，就可以分配任务了。</p>
+<p>由于每个处理器需要两个向量的对应分量来做计算，因此主控程序实际要向各被控程序发送 2 倍分量数的数据。在实现时我们将第二个向量的分量接在第一个后面，存储在缓冲区 <code>SendArray</code> 中来完成数据的传递和计算。</p>
+<p>这里需要注意的是发送缓冲区和接收缓冲区的长度的一致性问题。由于基于 MPI 的并行程序一般是由一个主控程序读取数据然后将任务分配，但是分配任务的时候，被控程序并不知道主控程序发送的数据缓冲区的长度。对这个问题的一种解决方法是，主控程序在发送数据前先发送数据缓冲区的长度；另一种方法是，由被控程序自己计算缓冲区的长度。本着减少通信的原则，通常采取第二种方法解决上述问题。这个问题尽管看起来很简单，但在实际操作中极容易被忽视，应该引起重视。</p>
+<p>此外，主控程序在分配任务的时候往往采取这样的方法：将一个处理器应分配的数据由数组传递出去后，再用这个数组存储应分配给下一个处理器的数据。这样，如果我们选择了 0 号处理器作为主控程序，就必须从后向前分配任务。因为如果我们以相反的顺序分配任务的话，0 号处理器首先将自己应分配的数据用数组保存起来，所以它必须另找地方保存这个数组，在分配好任务之后，再将这个数组转移回来，这就造成了程序控制和存储上的冗余。而如果采取从后向前的方法分配，主控程序在分配完受控程序的数据后，刚好得到了自己应得的数据。</p>
+<h3 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h3><p>整个程序的大体思路是：由主控程序从文件中读出向量的信息，然后把向量的维度广播给所有处理器，以便每个处理器计算出自己应得的数据长度，做好接收准备。然后，主控程序分配任务，从处理器接收任务。接下来，各个处理器完成自己的计算任务。最后，主处理器将所有结果收集起来，完成最后的处理，并输出结果。流程图如下图所示。</p>
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041058.jpg" alt="流程图" style="zoom: 50%;" />
+
+
+
+<h3 id="源代码"><a href="#源代码" class="headerlink" title="源代码"></a>源代码</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;mpi.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fstream.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc,<span class="keyword">char</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//初始化 MPI 环境</span></span><br><span class="line">    <span class="keyword">int</span> rank,size;</span><br><span class="line">    MPI_Status Status;</span><br><span class="line">    MPI_Init(&amp;argc, &amp;argv);</span><br><span class="line">    MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);</span><br><span class="line">    MPI_Comm_size(MPI_COMM_WORLD, &amp;size);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//定义与数组有关的数据结构</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> MAXN = <span class="number">10000</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> MAXPROCESSOR=<span class="number">64</span>;</span><br><span class="line">    <span class="keyword">float</span> Vector1[MAXN];</span><br><span class="line">    <span class="keyword">float</span> Vector2[MAXN];</span><br><span class="line">    <span class="keyword">int</span> VectorSize;</span><br><span class="line">    <span class="keyword">int</span> i, j;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//从文件中读入向量信息</span></span><br><span class="line">    <span class="keyword">if</span> (rank == <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function">ifstream <span class="title">in</span><span class="params">(<span class="string">"input.txt"</span>)</span></span>;</span><br><span class="line">        in &gt;&gt; VectorSize;</span><br><span class="line">        <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; VectorSize; i++)</span><br><span class="line">            in &gt;&gt; Vector1[i];</span><br><span class="line">        <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; VectorSize; i++)</span><br><span class="line">            in &gt;&gt; Vector2[i];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//广播向量的维度</span></span><br><span class="line">    MPI_Bcast(&amp;VectorSize, <span class="number">1</span>, MPI_INT, <span class="number">0</span>, MPI_COMM_WORLD);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//定义与任务分配有关的数据结构</span></span><br><span class="line">    <span class="keyword">int</span> AverageComponentNumber, HeavyProcessorNumber, MyComponentNumber;</span><br><span class="line">    <span class="keyword">int</span> CurrentComponent, StartComponent;</span><br><span class="line">    <span class="keyword">int</span> SendSize;</span><br><span class="line">    <span class="keyword">float</span> SendArray[MAXN*<span class="number">2</span>];</span><br><span class="line"></span><br><span class="line">    <span class="comment">//计算每个处理其应分得的向量分量数</span></span><br><span class="line">    AverageComponentNumber = VectorSize / size;</span><br><span class="line">    HeavyProcessorNumber = VectorSize % size;</span><br><span class="line">    <span class="keyword">if</span> (rank &lt; HeavyProcessorNumber)</span><br><span class="line">        MyComponentNumber = AverageComponentNumber + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        MyComponentNumber = AverageComponentNumber;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//如果是 0 号处理器，进行任务分配</span></span><br><span class="line">    <span class="keyword">if</span> (rank == <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        CurrentComponent = VectorSize - <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span> (i = size - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--)</span><br><span class="line">        &#123;</span><br><span class="line">            SendSize = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">if</span> (i &lt; HeavyProcessorNumber)</span><br><span class="line">                StartComponent = CurrentComponent - AverageComponentNumber;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">                StartComponent = CurrentComponent - AverageComponentNumber + <span class="number">1</span>;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">for</span> (j = StartComponent; j &lt;= CurrentComponent; j++)</span><br><span class="line">                SendArray[SendSize++] = Vector1[j];</span><br><span class="line">            <span class="keyword">for</span> (j = StartComponent; j &lt;= CurrentComponent; j++)</span><br><span class="line">                SendArray[SendSize++] = Vector2[j];</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (i != <span class="number">0</span>)</span><br><span class="line">                MPI_Send(SendArray, SendSize, MPI_FLOAT, i, <span class="number">10</span>, MPI_COMM_WORLD);</span><br><span class="line">            </span><br><span class="line">            CurrentComponent = StartComponent - <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//非 0 号处理其接收分配的分量</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        MPI_Recv(SendArray, MyComponentNumber*<span class="number">2</span>, MPI_FLOAT, <span class="number">0</span>, <span class="number">10</span>, MPI_COMM_WORLD, &amp;Status);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//定义每个处理器的“部分点积”变量，完成自己的计算任务</span></span><br><span class="line">    <span class="keyword">float</span> Product = <span class="number">0.0</span>;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; MyComponentNumber; i++)</span><br><span class="line">        Product += SendArray[i] * SendArray[i + MyComponentNumber];</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//将所有计算结果收集到 0 号处理器</span></span><br><span class="line">    <span class="keyword">float</span> AllProduct[MAXPROCESSOR];</span><br><span class="line">    MPI_Gather(&amp;Product, <span class="number">1</span>, MPI_FLOAT, AllProduct, <span class="number">1</span>, MPI_FLOAT, <span class="number">0</span>, MPI_COMM_WORLD);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//如果是 0 号处理器，则进行最后的计算，并输出结果</span></span><br><span class="line">    <span class="keyword">if</span> (rank == <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        Product = <span class="number">0.0</span>;</span><br><span class="line">        <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; size; i++)</span><br><span class="line">            Product += AllProduct[i];</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"The dot product of the two vectors is: "</span> &lt;&lt; Product &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//MPI 终止</span></span><br><span class="line">    MPI_Finalize();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag"># 并行计算</a>
+              <a href="/tags/MPI/" rel="tag"># MPI</a>
+              <a href="/tags/C-C/" rel="tag"># C/C++</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/10/31/Linux-Kernel-Development-%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8/" rel="prev" title="Linux Kernel Development 笔记（二）编译内核">
+      <i class="fa fa-chevron-left"></i> Linux Kernel Development 笔记（二）编译内核
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MPI-与-MPICH-简介"><span class="nav-number">1.</span> <span class="nav-text">MPI 与 MPICH 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Windows-下-MPICH-的安装与配置"><span class="nav-number">2.</span> <span class="nav-text">Windows 下 MPICH 的安装与配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#系统要求"><span class="nav-number">2.1.</span> <span class="nav-text">系统要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实验环境与工具"><span class="nav-number">2.2.</span> <span class="nav-text">实验环境与工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装"><span class="nav-number">2.3.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注册与配置"><span class="nav-number">2.4.</span> <span class="nav-text">注册与配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MPICH-与编译环境的整合"><span class="nav-number">2.5.</span> <span class="nav-text">MPICH 与编译环境的整合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#样例程序的运行"><span class="nav-number">2.6.</span> <span class="nav-text">样例程序的运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于-MPI-的并行程序设计"><span class="nav-number">3.</span> <span class="nav-text">基于 MPI 的并行程序设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#流程图"><span class="nav-number">3.2.</span> <span class="nav-text">流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源代码"><span class="nav-number">3.3.</span> <span class="nav-text">源代码</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="禹衡"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">禹衡</p>
+  <div class="site-description" itemprop="description">此生将无法被定义</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">禹衡</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">106k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:37</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '8cc7c10d257e7c09cd3c',
+      clientSecret: '1ba6a901214a6d75fd0d259addb8cd9fd30eb43d',
+      repo        : 'timdyh.github.io',
+      owner       : 'TimDyh',
+      admin       : ['TimDyh'],
+      id          : '7c644f22246cc41f9d024e773b96f88d',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
