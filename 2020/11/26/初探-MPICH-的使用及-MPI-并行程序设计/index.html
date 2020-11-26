@@ -41,8 +41,9 @@
 <meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41143.jpg">
 <meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41137.jpg">
 <meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041058.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-141339.png">
 <meta property="article:published_time" content="2020-11-26T04:13:45.000Z">
-<meta property="article:modified_time" content="2020-11-26T04:29:26.683Z">
+<meta property="article:modified_time" content="2020-11-26T14:23:41.556Z">
 <meta property="article:author" content="禹衡">
 <meta property="article:tag" content="并行计算">
 <meta property="article:tag" content="MPI">
@@ -240,7 +241,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>6.4k</span>
+              <span>6.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -288,9 +289,9 @@
 
 <h3 id="注册与配置"><a href="#注册与配置" class="headerlink" title="注册与配置"></a>注册与配置</h3><p>安装好 MPICH 之后还必须对每台计算机进行注册和配置才能使用。其中注册必须每台计算机都要进行，配置只要在主控的计算机执行就行了。</p>
 <p>注册的目的是，将先前在每台计算机上申请的账号与密码注册到 MPICH 中去，这样 MPICH 才能在网络环境中访问每台主机。运行“mpich\mpd\bin\MPIRegister.exe”，首先会提示输入用户账号，然后会提示输入两边密码，之后会问你是否保持上面的设定。如果选择是，则上面的信息将写入硬盘，否则保存在内存中，再重新启动之后就不存在了。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041139.jpg" alt="MPIRegister"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041139.jpg" alt=""></p>
 <p>为了让程序在许多主机上执行，而不需建立配置文件来给出相应的各个主机的信息，主控机必须直到当前可用的主机的信息。这时就需要运行 MPICH 的配置程序来进行配置了。MPICH 提供的配置程序是一个图形界面的程序，可以从“开始-&gt;程序-&gt;MPICH-&gt;mpd-&gt;MPICH Configuration tool”启动。启动之后的界面如下图所示：</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041142.jpg" alt="MPICH Configuration tool"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041142.jpg" alt=""></p>
 <p>整个界面分为三栏，在第一栏中点击Select（1号按钮），然后在跳出的对话框中选择安装了 MPICH 的主机名。之后在第一栏的编辑框中会显示出所有选择的主机。检查无误后，点击第二栏的 Apply（2号按钮），这时下方的进度条会显示对各主机核查的情况，如果没问题整个进度条会变为蓝色。最后点击OK（3号按钮）。整个配置就完成了。</p>
 <h3 id="MPICH-与编译环境的整合"><a href="#MPICH-与编译环境的整合" class="headerlink" title="MPICH 与编译环境的整合"></a>MPICH 与编译环境的整合</h3><p>MPICH 提供了 C 语言和 Fortran 语言的接口。要编译一个 MPI+C 或 MPI+Fortran 的程序必须对编译器进行设置。下面以 Visual C++ 6.0 为例进行说明。</p>
 <p>在 Visual C++ 6 中编译一个 MPI+C 的程序的步骤如下：</p>
@@ -302,23 +303,23 @@
 <li><p>在新的工程的编辑界面下，按 Alt+F7 打开工程设置对话框。</p>
 </li>
 <li><p>切换到 C/C++ 选项卡。首先选择“Win32 Debug”，再选择“Code Generation”，再选择“Debug Multithreaded”。这时在“Project Options”的文本框中显示“/MT”表示设置成功。然后选择“Win32 Release”重复上述步骤。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041141.jpg" alt="Visual C++设置（1）"></p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041138.jpg" alt="Visual C++设置（2）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041141.jpg" alt=""></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041138.jpg" alt=""></p>
 </li>
 <li><p>在 C/C++ 选项卡中，选择“All Configurations”。选择“Preprocessor”，在“Additional include directories”的文本框中输入 MPICH 所附带的头文件的目录。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041137.jpg" alt="Visual C++设置（3）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041137.jpg" alt=""></p>
 </li>
 <li><p>在 Link 选项卡中，选择“All Configurations”。然后再选择“Input”，在“Additional library path”的文本框中输入 MPICH 所附带的库文件的目录。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041143.jpg" alt="Visual C++设置（4）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041143.jpg" alt=""></p>
 </li>
 <li><p>在 Link 选项卡中，选择“All Configurations”。然后再选择“General”，然后在“Object/library modules”的文本框中添加“ws2_32.lib”。点击“OK”。这时在“Common Options”中会出现“ws2_32.lib”。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041144.jpg" alt="Visual C++设置（5）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041144.jpg" alt=""></p>
 </li>
 <li><p>在 Link 选项卡中，选择“Win32 Debug”。然后再选择“General”，然后在“Object/library modules”的文本框中添加“mpichd.lib”。点击“OK”。这时在“Project Options”中会出现“mpichd.lib”。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041140.jpg" alt="Visual C++设置（6）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041140.jpg" alt=""></p>
 </li>
 <li><p>在 Link 选项卡中，选择“Win32 Release”。然后再选择“General”，然后在“Object/library modules”的文本框中添加“mpich.lib”。点击“OK”。这时在“Project Options”中会出现“mpich.lib”。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41143.jpg" alt="Visual C++设置（7）"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41143.jpg" alt=""></p>
 </li>
 <li><p>关闭工程设置对话框。</p>
 </li>
@@ -326,7 +327,7 @@
 <h3 id="样例程序的运行"><a href="#样例程序的运行" class="headerlink" title="样例程序的运行"></a>样例程序的运行</h3><p>在“MPICH\SDK\Examples\nt\Basic”有一个简单的计算 π 的程序，在 VC 下编译成可执行程序就可应用来测试并行环境。</p>
 <p>在 MPICH 中运行并行程序有两种方式：命令行方式和图形方式。命令行方式可以使用配置文件，功能比较强，但操作复杂易出错。图形方式简单明了，下面以图形方式说明如何运行一个测试程序来测试并行环境。</p>
 <p>在运行一个程序之前，首先要做的事是将待运行的目标程序复制到所有的主机的相同目录下，运行程序的步骤如下：从“开始-&gt;程序-&gt;MPICH-&gt;mpd-&gt;MPIRun”启动图形方式的 MPI 环境。首先，选择待运行的程序，点击右上角的“..”按钮，选择相应的程序；然后选择需要用于计算的主机个数，指定参加运算的主机名；最后点击Run，运行程序。运行的结果会显示在文本框，不同主机的输出信息会以不同的颜色标出。</p>
-<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41137.jpg" alt="MPIRun"></p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-41137.jpg" alt=""></p>
 <h2 id="基于-MPI-的并行程序设计"><a href="#基于-MPI-的并行程序设计" class="headerlink" title="基于 MPI 的并行程序设计"></a>基于 MPI 的并行程序设计</h2><p>并行的程序设计的核心问题是任务分配和通信，MPI 对通信提供了良好的支持，所以如何分配任务成了我们主要关心的问题。这里通过对一个实例的分析和实现来简要的介绍一下如何使用 MPI 来构造一个对等模式的并行程序。</p>
 <blockquote>
 <p>实例：求两个向量的点积。</p>
@@ -338,7 +339,7 @@
 <p>这里需要注意的是发送缓冲区和接收缓冲区的长度的一致性问题。由于基于 MPI 的并行程序一般是由一个主控程序读取数据然后将任务分配，但是分配任务的时候，被控程序并不知道主控程序发送的数据缓冲区的长度。对这个问题的一种解决方法是，主控程序在发送数据前先发送数据缓冲区的长度；另一种方法是，由被控程序自己计算缓冲区的长度。本着减少通信的原则，通常采取第二种方法解决上述问题。这个问题尽管看起来很简单，但在实际操作中极容易被忽视，应该引起重视。</p>
 <p>此外，主控程序在分配任务的时候往往采取这样的方法：将一个处理器应分配的数据由数组传递出去后，再用这个数组存储应分配给下一个处理器的数据。这样，如果我们选择了 0 号处理器作为主控程序，就必须从后向前分配任务。因为如果我们以相反的顺序分配任务的话，0 号处理器首先将自己应分配的数据用数组保存起来，所以它必须另找地方保存这个数组，在分配好任务之后，再将这个数组转移回来，这就造成了程序控制和存储上的冗余。而如果采取从后向前的方法分配，主控程序在分配完受控程序的数据后，刚好得到了自己应得的数据。</p>
 <h3 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h3><p>整个程序的大体思路是：由主控程序从文件中读出向量的信息，然后把向量的维度广播给所有处理器，以便每个处理器计算出自己应得的数据长度，做好接收准备。然后，主控程序分配任务，从处理器接收任务。接下来，各个处理器完成自己的计算任务。最后，主处理器将所有结果收集起来，完成最后的处理，并输出结果。流程图如下图所示。</p>
-<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041058.jpg" alt="流程图" style="zoom: 50%;" />
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-041058.jpg" style="zoom: 50%;" />
 
 
 
@@ -346,6 +347,12 @@
 
 
 
+<h3 id="运行结构"><a href="#运行结构" class="headerlink" title="运行结构"></a>运行结构</h3><p>当输入文件 input.txt 内容为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">10</span><br><span class="line">4 1 -3 8 7 0 -1 7 5 2</span><br><span class="line">-6 3 -1 9 3 6 4 1 1 8</span><br></pre></td></tr></table></figure>
+
+<p>时，程序的运行结果如下图所示：</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2020-11-26-141339.png" alt="截屏2020-11-24 下午10.22.17"></p>
+<p>结果符合预期，从而验证了程序的正确性。</p>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ol>
 <li>MPICH 并行程序设计环境简介. 安竹林. 2003-6-3</li>
 </ol>
@@ -432,7 +439,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MPI-与-MPICH-简介"><span class="nav-number">1.</span> <span class="nav-text">MPI 与 MPICH 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Windows-下-MPICH-的安装与配置"><span class="nav-number">2.</span> <span class="nav-text">Windows 下 MPICH 的安装与配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#系统要求"><span class="nav-number">2.1.</span> <span class="nav-text">系统要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实验环境与工具"><span class="nav-number">2.2.</span> <span class="nav-text">实验环境与工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装"><span class="nav-number">2.3.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注册与配置"><span class="nav-number">2.4.</span> <span class="nav-text">注册与配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MPICH-与编译环境的整合"><span class="nav-number">2.5.</span> <span class="nav-text">MPICH 与编译环境的整合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#样例程序的运行"><span class="nav-number">2.6.</span> <span class="nav-text">样例程序的运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于-MPI-的并行程序设计"><span class="nav-number">3.</span> <span class="nav-text">基于 MPI 的并行程序设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#流程图"><span class="nav-number">3.2.</span> <span class="nav-text">流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源代码"><span class="nav-number">3.3.</span> <span class="nav-text">源代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MPI-与-MPICH-简介"><span class="nav-number">1.</span> <span class="nav-text">MPI 与 MPICH 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Windows-下-MPICH-的安装与配置"><span class="nav-number">2.</span> <span class="nav-text">Windows 下 MPICH 的安装与配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#系统要求"><span class="nav-number">2.1.</span> <span class="nav-text">系统要求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实验环境与工具"><span class="nav-number">2.2.</span> <span class="nav-text">实验环境与工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装"><span class="nav-number">2.3.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注册与配置"><span class="nav-number">2.4.</span> <span class="nav-text">注册与配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MPICH-与编译环境的整合"><span class="nav-number">2.5.</span> <span class="nav-text">MPICH 与编译环境的整合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#样例程序的运行"><span class="nav-number">2.6.</span> <span class="nav-text">样例程序的运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于-MPI-的并行程序设计"><span class="nav-number">3.</span> <span class="nav-text">基于 MPI 的并行程序设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#流程图"><span class="nav-number">3.2.</span> <span class="nav-text">流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源代码"><span class="nav-number">3.3.</span> <span class="nav-text">源代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行结构"><span class="nav-number">3.4.</span> <span class="nav-text">运行结构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
