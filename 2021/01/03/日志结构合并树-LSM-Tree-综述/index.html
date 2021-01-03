@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Overview传统关系型数据库使用B-Tree或一些变体作为存储结构，能高效进行查找。但保存在磁盘中时它也有一个明显的缺陷，那就是逻辑上相离很近但物理却可能相隔很远，这就可能造成大量的磁盘随机读写。随机读写比顺序读写慢很多，为了提升IO性能，我们需要一种能将随机操作变为顺序操作的机制，于是便有了LSM树。其主要思想是将磁盘看作一个大的日志，先内存更新后合并落盘形成多个有序文件，每次都将新的数据及">
+<meta property="og:type" content="article">
+<meta property="og:title" content="日志结构合并树(LSM-Tree)综述">
+<meta property="og:url" content="http://yoursite.com/2021/01/03/%E6%97%A5%E5%BF%97%E7%BB%93%E6%9E%84%E5%90%88%E5%B9%B6%E6%A0%91-LSM-Tree-%E7%BB%BC%E8%BF%B0/index.html">
+<meta property="og:site_name" content="TimDyh">
+<meta property="og:description" content="Overview传统关系型数据库使用B-Tree或一些变体作为存储结构，能高效进行查找。但保存在磁盘中时它也有一个明显的缺陷，那就是逻辑上相离很近但物理却可能相隔很远，这就可能造成大量的磁盘随机读写。随机读写比顺序读写慢很多，为了提升IO性能，我们需要一种能将随机操作变为顺序操作的机制，于是便有了LSM树。其主要思想是将磁盘看作一个大的日志，先内存更新后合并落盘形成多个有序文件，每次都将新的数据及">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105412.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105416.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105420.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105423.jpg">
+<meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105426.jpg">
+<meta property="article:published_time" content="2021-01-03T11:01:17.000Z">
+<meta property="article:modified_time" content="2021-01-03T11:07:15.690Z">
+<meta property="article:author" content="禹衡">
+<meta property="article:tag" content="LSM">
+<meta property="article:tag" content="存储">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="NoSQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105412.jpg">
+
+<link rel="canonical" href="http://yoursite.com/2021/01/03/%E6%97%A5%E5%BF%97%E7%BB%93%E6%9E%84%E5%90%88%E5%B9%B6%E6%A0%91-LSM-Tree-%E7%BB%BC%E8%BF%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>日志结构合并树(LSM-Tree)综述 | TimDyh</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?5a3f05cca5b5d8d38abfd03700d999f3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">TimDyh</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/01/03/%E6%97%A5%E5%BF%97%E7%BB%93%E6%9E%84%E5%90%88%E5%B9%B6%E6%A0%91-LSM-Tree-%E7%BB%BC%E8%BF%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="禹衡">
+      <meta itemprop="description" content="此生将无法被定义">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="TimDyh">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          日志结构合并树(LSM-Tree)综述
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-03 19:01:17" itemprop="dateCreated datePublished" datetime="2021-01-03T19:01:17+08:00">2021-01-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p>传统关系型数据库使用B-Tree或一些变体作为存储结构，能高效进行查找。但保存在磁盘中时它也有一个明显的缺陷，那就是逻辑上相离很近但物理却可能相隔很远，这就可能造成大量的磁盘随机读写。随机读写比顺序读写慢很多，为了提升IO性能，我们需要一种能将随机操作变为顺序操作的机制，于是便有了LSM树。其主要思想是将磁盘看作一个大的日志，先内存更新后合并落盘形成多个有序文件，每次都将新的数据及其索引结构添加到日志的最末端，以实现对磁盘的顺序操作，从而大幅提升写操作。而对于读则需合并磁盘已有历史数据和当前驻于内存中的未落盘更新，因而作为代价牺牲了一些读性能。</p>
+<p>当今很多主流DB都使用了LSM树的存储模型，包括Google BigTable、LevelDB、HBase、RocksDBCassandra等。</p>
+<a id="more"></a>
+
+
+
+<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>Log-Structured的思想最早由Rosenblum和Ousterhout于1992年在研究日志结构的文件系统时提出，它基于这样的假设：文件被缓存在主内存中，并且不断增加的内存大小将使缓存在满足读取请求方面越来越有效。在这种情况下，写入将在磁盘流量中占主导地位。日志结构的文件系统将所有新信息以日志的顺序结构写入磁盘。通过消除几乎所有寻道，该方法可显着提高写入性能，并可以实现更快的崩溃恢复。日志结构的文件系统将日志作为唯一的数据结构永久存储在磁盘上，同时该日志也包含索引信息，从而能够高效地从日志中读取文件。</p>
+<p>O’Neil等人受到这种思想的启发，借鉴了Log不断追加（而不是修改）的特点，结合B-Tree的数据结构，提出了一种延迟更新、批量写入硬盘的数据结构LSM-Tree及其算法，旨在为长期记录插入（和删除）率很高的文件提供低成本索引。LSM树使用一种推迟和分批索引更改的算法，以一种类似于合并排序的方式，将更新从内存到磁盘进行多层级联。与传统的访问方法（例如B树）相比，该算法大大减少了磁盘臂的移动。但是在某些情况下，需要立即响应的索引查找将失去I/O效率，因此LSM树在索引插入比检索条目更常见的应用程序中最有用。</p>
+<h2 id="The-Log-Structured-Merge-Tree-LSM-Tree"><a href="#The-Log-Structured-Merge-Tree-LSM-Tree" class="headerlink" title="The Log-Structured Merge-Tree (LSM-Tree)"></a>The Log-Structured Merge-Tree (LSM-Tree)</h2><p>LSM树由两个或以上的存储结构组成，比如在论文中为了方便说明使用了最简单的两个存储结构。一个存储结构常驻内存中，称为C0 tree，具体可以是任何方便健值查找的数据结构，比如红黑树、map之类，甚至可以是跳表。另外一个存储结构常驻在硬盘中，称为C1 tree，具体结构类似B树。</p>
+<p>下图为包含2个结构的LSM树：</p>
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105412.jpg" style="zoom: 50%;" />
+
+<p>在LSM树中，最低一级即最小的C0树位于内存,而更高级的C1、C2…树都位于磁盘里。数据会先写入内存中的C0树，当它的大小达到一定阈值之后，C0树中的全部或部分数据就会刷入磁盘中的C1树，如下图所示。</p>
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105416.jpg" style="zoom: 50%;" />
+
+<p>由于内存读写速率比外存要快非常多，因此数据写入C0树的效率很高。且数据从内存刷入磁盘时是预排序的，也就是说，LSM树将原本随机写操作转化成了顺序写操作，写性能大幅提升。不过，它的tradeoff就是牺牲了一部分读性能，因为读取时需将内存中数据和磁盘中的数据合并。总体上讲这种权衡还是值得的，因为：</p>
+<ul>
+<li>可以先读取内存中C0树的缓存数据。内存效率高且根据局部性原理，最近写入的数据命中率也高。</li>
+<li>写入数据未刷到磁盘时不会占用磁盘的I/O，不会与读取竞争。读取操作就能取得更长的磁盘时间，变相地弥补了读性能差距。</li>
+</ul>
+<p>在实际应用中，为防止内存因断电等原因丢失数据，写入内存的数据同时会顺序在磁盘上写日志，类似于预写日志(WAL)，这就是LSM这个词中Log一词的来历。另外，如有多级树，低级的树在达到大小阈值后也会在磁盘中进行合并，如下图所示。</p>
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105420.jpg" style="zoom:50%;" />
+
+
+
+<h2 id="Bigtable"><a href="#Bigtable" class="headerlink" title="Bigtable"></a>Bigtable</h2><p>2006年，Google发表了著名的Bigtable论文，将LSM应用于大规模数据存储。Bigtable是一个用于管理结构化数据的分布式存储系统，能够扩展到数千台服务器上PB级的数据规模。在Google，包括Web索引、Google Earth和Google Financial在内的许多项目都将数据存储于Bigtable，这些应用在数据量和延迟要求上对Bigtable提出了千差万别的需求。尽管如此，Bigtable仍然成功地对所有这些Google产品提供了灵活且高性能的解决方法。</p>
+<p>Bigtable不是关系型数据库，但是却沿用了很多关系型数据库的术语，像table（表）、row（行）、column（列）等。这容易让读者误入歧途，将其与关系型数据库的概念对应起来，从而难以理解论文。<a href="https://dzone.com/articles/understanding-hbase-and-bigtab" target="_blank" rel="noopener">Understanding HBase and BigTable</a>是篇很优秀的文章，可以帮助读者从关系型数据模型的思维定势中走出来。</p>
+<h3 id="Data-Model"><a href="#Data-Model" class="headerlink" title="Data Model"></a>Data Model</h3><p>本质上说，Bigtable是一个键值（key-value）映射。按作者的说法，Bigtable是一个”稀疏的、分布式的、持久化的多维度排序Map“。Bigtable的键有三维，分别是行键（row key）、列键（column key）和时间戳（timestamp），行键和列键都是字节串，时间戳是64位整型；而值是一个字节串。可以用 <strong>(row:string, column:string, time:int64)→string</strong> 来表示一条键值对记录。若干列键聚合在一起形成一个列族，以 <strong>family:qualifier</strong> 的形式命名列键。</p>
+<p>下图是Bigtable论文里给出的例子，Webtable表存储了大量的网页和相关信息。在Webtable中，每一行存储一个网页，其反转的url作为行键，比如maps.google.com/index.html的数据存储在键为com.google.maps/index.html的行里，反转的原因是为了让同一个域名下的子域名网页能聚集在一起。图中的列族”anchor”保存了该网页的引用站点（比如引用了CNN主页的站点），qualifier是引用站点的名称，而数据是链接文本；列族”contents”保存的是网页的内容，这个列族只有一个空列”contents:”，该列下保存了网页的三个版本，我们可以用(“com.cnn.www”, “contents:”, t5)来找到CNN主页在t5时刻的内容。</p>
+<p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105423.jpg" alt=""></p>
+<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>Bigtable按照行键的字典序存储数据，表会根据行键自动划分为片（tablet），作为负载均衡的单元。片的数据最终会写到GFS（Google File System），片在GFS里的物理形态就是若干个SSTable文件。下图展示了读写操作的基本情况。</p>
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105426.jpg" alt="截屏2020-12-19 下午3.41.35" style="zoom:50%;" />
+
+<p>当片服务器收到一个写请求，片服务器首先检查请求是否合法。如果合法，先将写请求提交到日志去，然后将数据写入内存中的memtable。memtable是内存中的有序buffer，相当于SSTable的缓存，存储最近提交的数据。当memtable成长到一定规模会被冻结，Bigtable随之创建一个新的memtable，并且将冻结的memtable转换为SSTable格式写入GFS，这个操作称为<strong>minor compaction</strong>。</p>
+<p>当片服务器收到一个读请求，同样要检查请求是否合法。如果合法，这个读操作会查看所有SSTable文件和memtable的合并视图。因为SSTable和memtable本身都是已排序的，所以合并相当快。</p>
+<p>每一次minor compaction都会产生一个新的SSTable文件，SSTable文件太多读操作的效率就降低了，所以Bigtable定期执行merging compaction操作，将几个SSTable和memtable合并为一个新的SSTable。如果一次merging compaction将所有SSTable合并为一个SSTable，则该操作称为<strong>major compaction</strong>。</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ol>
+<li><a href="https://people.eecs.berkeley.edu/~brewer/cs262/LFS.pdf" target="_blank" rel="noopener">The Design and Implementation of a Log-Structured File System</a></li>
+<li><a href="https://www.cs.umb.edu/~poneil/lsmtree.pdf" target="_blank" rel="noopener">The Log-Structured Merge-Tree (LSM-Tree)</a></li>
+<li><a href="https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/bigtable-osdi06.pdf" target="_blank" rel="noopener">Bigtable: A Distributed Storage System for Structured Data</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/247953550" target="_blank" rel="noopener">关于数据存储引擎结构，没有比这篇更详细的</a></li>
+<li><a href="https://www.cnblogs.com/siegfang/archive/2013/01/12/lsm-tree.html" target="_blank" rel="noopener">日志结构的合并树 The Log-Structured Merge-Tree</a></li>
+<li><a href="https://blog.csdn.net/las723/article/details/93767240" target="_blank" rel="noopener">LSM树</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/114906516" target="_blank" rel="noopener">分布式——吞吐量巨强、Hbase的承载者 LSMT</a></li>
+<li><a href="http://www.benstopford.com/2015/02/14/log-structured-merge-trees/" target="_blank" rel="noopener">Log Structured Merge Trees</a></li>
+<li><a href="https://www.igvita.com/2012/02/06/sstable-and-log-structured-storage-leveldb/" target="_blank" rel="noopener">SSTable and Log Structured Storage: LevelDB</a></li>
+<li><a href="[https://ggaaooppeenngg.github.io/zh-CN/2017/03/31/%E4%BB%8E%E6%9C%B4%E7%B4%A0%E8%A7%A3%E9%87%8A%E5%87%BA%E5%8F%91%E8%A7%A3%E9%87%8Aleveldb%E7%9A%84%E8%AE%BE%E8%AE%A1/](https://ggaaooppeenngg.github.io/zh-CN/2017/03/31/从朴素解释出发解释leveldb的设计/)">从朴素解释出发解释leveldb的设计</a></li>
+<li><a href="https://dzone.com/articles/understanding-hbase-and-bigtab" target="_blank" rel="noopener">Understanding HBase and BigTable</a></li>
+<li><a href="https://www.scylladb.com/2018/01/17/compaction-series-space-amplification/" target="_blank" rel="noopener">Scylla’s Compaction Strategies Series: Space Amplification in Size-Tiered Compaction</a></li>
+<li><a href="https://www.scylladb.com/2018/01/31/compaction-series-leveled-compaction/" target="_blank" rel="noopener">Scylla’s Compaction Strategies Series: Write Amplification in Leveled Compaction</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LSM/" rel="tag"># LSM</a>
+              <a href="/tags/%E5%AD%98%E5%82%A8/" rel="tag"># 存储</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/NoSQL/" rel="tag"># NoSQL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/26/%E5%88%9D%E6%8E%A2-MPICH-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%8F%8A-MPI-%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/" rel="prev" title="初探 MPICH 的使用及 MPI 并行程序设计">
+      <i class="fa fa-chevron-left"></i> 初探 MPICH 的使用及 MPI 并行程序设计
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Overview"><span class="nav-number">1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">2.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#The-Log-Structured-Merge-Tree-LSM-Tree"><span class="nav-number">3.</span> <span class="nav-text">The Log-Structured Merge-Tree (LSM-Tree)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Bigtable"><span class="nav-number">4.</span> <span class="nav-text">Bigtable</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Model"><span class="nav-number">4.1.</span> <span class="nav-text">Data Model</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Implementation"><span class="nav-number">4.2.</span> <span class="nav-text">Implementation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">5.</span> <span class="nav-text">References</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="禹衡"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">禹衡</p>
+  <div class="site-description" itemprop="description">此生将无法被定义</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">禹衡</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">110k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:40</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '8cc7c10d257e7c09cd3c',
+      clientSecret: '1ba6a901214a6d75fd0d259addb8cd9fd30eb43d',
+      repo        : 'timdyh.github.io',
+      owner       : 'TimDyh',
+      admin       : ['TimDyh'],
+      id          : '3b6332d6df546bcc321a9bebb668b70a',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
