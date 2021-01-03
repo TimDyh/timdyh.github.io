@@ -34,7 +34,7 @@
 <meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105423.jpg">
 <meta property="og:image" content="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105426.jpg">
 <meta property="article:published_time" content="2021-01-03T11:01:17.000Z">
-<meta property="article:modified_time" content="2021-01-03T11:07:15.690Z">
+<meta property="article:modified_time" content="2021-01-03T11:10:02.980Z">
 <meta property="article:author" content="禹衡">
 <meta property="article:tag" content="LSM">
 <meta property="article:tag" content="存储">
@@ -283,7 +283,7 @@
 <p>下图是Bigtable论文里给出的例子，Webtable表存储了大量的网页和相关信息。在Webtable中，每一行存储一个网页，其反转的url作为行键，比如maps.google.com/index.html的数据存储在键为com.google.maps/index.html的行里，反转的原因是为了让同一个域名下的子域名网页能聚集在一起。图中的列族”anchor”保存了该网页的引用站点（比如引用了CNN主页的站点），qualifier是引用站点的名称，而数据是链接文本；列族”contents”保存的是网页的内容，这个列族只有一个空列”contents:”，该列下保存了网页的三个版本，我们可以用(“com.cnn.www”, “contents:”, t5)来找到CNN主页在t5时刻的内容。</p>
 <p><img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105423.jpg" alt=""></p>
 <h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>Bigtable按照行键的字典序存储数据，表会根据行键自动划分为片（tablet），作为负载均衡的单元。片的数据最终会写到GFS（Google File System），片在GFS里的物理形态就是若干个SSTable文件。下图展示了读写操作的基本情况。</p>
-<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105426.jpg" alt="截屏2020-12-19 下午3.41.35" style="zoom:50%;" />
+<img data-src="https://ipichub.oss-cn-hangzhou.aliyuncs.com/2021-01-03-105426.jpg" style="zoom:50%;" />
 
 <p>当片服务器收到一个写请求，片服务器首先检查请求是否合法。如果合法，先将写请求提交到日志去，然后将数据写入内存中的memtable。memtable是内存中的有序buffer，相当于SSTable的缓存，存储最近提交的数据。当memtable成长到一定规模会被冻结，Bigtable随之创建一个新的memtable，并且将冻结的memtable转换为SSTable格式写入GFS，这个操作称为<strong>minor compaction</strong>。</p>
 <p>当片服务器收到一个读请求，同样要检查请求是否合法。如果合法，这个读操作会查看所有SSTable文件和memtable的合并视图。因为SSTable和memtable本身都是已排序的，所以合并相当快。</p>
